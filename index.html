@@ -277,7 +277,7 @@ select {
             </div>
             <div class="form-row" style="margin:0;">
               <label>Price at Note (₹/$)</label>
-              <input type="text" id="price-field" placeholder="e.g. 2450.50" style="font-family:'DM Mono',monospace;" />
+              <input type="text" id="price-field" placeholder="e.g. 2450.50" style="font-family:'DM Mono',monospace;" inputmode="decimal" oninput="this.value=this.value.replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1')" />
             </div>
           </div>
           <div class="meta-row">
