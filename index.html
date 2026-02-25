@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockNotes — Market Intelligence Capture</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --border: #2a2a35;
+    --accent: #00ff87;
+    --accent2: #0096ff;
+    --warn: #ff6b35;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --ticker-bg: #0d1f0d;
+    --ticker-border: #1a4a1a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,135,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,135,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,255,135,0.4);
+  }
+  .logo span { color: var(--muted); }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  #auth-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  #auth-btn:hover { background: #00e87a; transform: translateY(-1px); }
+  #auth-btn.signed-in { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+
+  #user-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    display: none;
+  }
+
+  /* ── LAYOUT ── */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 24px;
+  }
+
+  @media (max-width: 768px) {
+    main { grid-template-columns: 1fr; padding: 16px; }
+  }
+
+  /* ── PANELS ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* ── NOTE FORM ── */
+  .form-row { margin-bottom: 16px; }
+
+  .form-row label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .ticker-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  input[type="text"], select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,255,135,0.08);
+  }
+
+  #ticker-field {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--ticker-bg);
+    border-color: var(--ticker-border);
+    max-width: 160px;
+  }
+
+  #note-body {
+    min-height: 160px;
+    resize: vertical;
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  /* ── TAG PILLS ── */
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .tag-pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .tag-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .tag-pill.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .tag-pill.THESIS { --pill-c: #00ff87; }
+  .tag-pill.RISK { --pill-c: #ff6b35; }
+  .tag-pill.TRADE { --pill-c: #0096ff; }
+  .tag-pill.EARNINGS { --pill-c: #ffd60a; }
+  .tag-pill.WATCHLIST { --pill-c: #bf5af2; }
+
+  /* ── META ROW ── */
+  .meta-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b80' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+  }
+
+  /* ── VOICE INDICATOR ── */
+  .voice-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: rgba(0,150,255,0.06);
+    border: 1px solid rgba(0,150,255,0.15);
+    border-radius: 6px;
+  }
+
+  .voice-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── SAVE BUTTON ── */
+  #save-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #save-btn:hover { background: #00e87a; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,255,135,0.3); }
+  #save-btn:active { transform: translateY(0); }
+  #save-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  #save-btn .btn-ripple {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.2);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  /* ── DIGEST BUTTON ── */
+  #digest-btn {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    color: var(--warn);
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  #digest-btn:hover { background: rgba(255,107,53,0.1); }
+  #digest-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── STATUS TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 320px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { background: #0d2a1a; border: 1px solid var(--accent); color: var(--accent); }
+  #toast.error { background: #2a0d0d; border: 1px solid #ff4444; color: #ff4444; }
+  #toast.info { background: #0d1a2a; border: 1px solid var(--accent2); color: var(--accent2); }
+
+  /* ── NOTES LIST ── */
+  .notes-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .note-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: default;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .note-card:hover { border-color: #3a3a4a; transform: translateX(-2px); }
+
+  .note-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .note-ticker {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .note-meta { display: flex; align-items: center; gap: 8px; }
+
+  .note-tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+  }
+  .note-tag.THESIS { background: rgba(0,255,135,0.1); color: #00ff87; }
+  .note-tag.RISK { background: rgba(255,107,53,0.1); color: #ff6b35; }
+  .note-tag.TRADE { background: rgba(0,150,255,0.1); color: #0096ff; }
+  .note-tag.EARNINGS { background: rgba(255,214,10,0.1); color: #ffd60a; }
+  .note-tag.WATCHLIST { background: rgba(191,90,242,0.1); color: #bf5af2; }
+
+  .note-time {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .note-body {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #b0b0c0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .note-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+
+  .filter-chip {
+    flex-shrink: 0;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-chip:hover, .filter-chip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,255,135,0.05);
+  }
+
+  /* ── SEARCH ── */
+  .search-wrap {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #search-input {
+    background: var(--surface2);
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+  .empty-text { font-size: 13px; line-height: 1.6; }
+
+  /* ── LOADING SPINNER ── */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,255,135,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SETUP SCREEN ── */
+  #setup-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .setup-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .setup-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(0,255,135,0.5);
+    margin-bottom: 8px;
+  }
+
+  .setup-tagline {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    letter-spacing: 0.5px;
+  }
+
+  .setup-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    text-align: left;
+  }
+
+  .setup-step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .setup-step-text {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .setup-input {
+    width: 100%;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  #setup-go-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  #setup-go-btn:hover { background: #00e87a; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 540px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .modal-close {
+    float: right;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    margin-top: -4px;
+  }
+
+  .digest-output {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+  }
+
+  .action-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .action-bullet {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--warn);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #000;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .send-email-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent2);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .send-email-btn:hover { background: #0080e0; }
+
+  /* ── FOLDER PATH DISPLAY ── */
+  .folder-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(0,150,255,0.08);
+    border: 1px solid rgba(0,150,255,0.2);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--accent2);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo">StockNotes</div>
+    <div class="setup-tagline">Market Intelligence Capture · Google Drive · Cross-Platform</div>
+
+    <div class="setup-step">
+      <div class="setup-step-num">STEP 01 — GOOGLE API SETUP</div>
+      <div class="setup-step-text">
+        Go to <strong>console.cloud.google.com</strong> → Create project → Enable <em>Google Drive API</em> + <em>Google Docs API</em> →
+        Create OAuth 2.0 credentials (Web App) → Add your domain to authorized origins. Set redirect URI to this page URL.
+      </div>
+    </div>
+
+    <div class="setup-step">
+      <div class="setup-step-num">STEP 02 — ENTER YOUR CREDENTIALS</div>
+      <div class="setup-step-text">Paste your OAuth Client ID below. This is stored only in your browser.</div>
+    </div>
+
+    <input type="text" class="setup-input" id="client-id-input"
+           placeholder="Google OAuth Client ID (xxx.apps.googleusercontent.com)" />
+
+    <div class="setup-step">
+      <div class="setup-step-num">STEP 03 — DRIVE FOLDER NAME</div>
+      <div class="setup-step-text">A folder will be created in your Google Drive to store all notes as .docx files.</div>
+    </div>
+
+    <input type="text" class="setup-input" id="folder-name-input"
+           placeholder="Drive folder name (e.g. StockNotes)" value="StockNotes" />
+
+    <div class="setup-step">
+      <div class="setup-step-num">STEP 04 — EMAIL FOR DIGESTS</div>
+      <div class="setup-step-text">When you request an Action Items digest, it will open your mail client with the summary.</div>
+    </div>
+
+    <input type="email" class="setup-input" id="email-input"
+           placeholder="your@email.com" />
+
+    <button id="setup-go-btn" onclick="saveSetup()">SAVE & SIGN IN WITH GOOGLE →</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<header>
+  <div class="logo">Stock<span>Notes</span></div>
+  <div class="header-right">
+    <img id="user-avatar" alt="User" />
+    <button id="auth-btn" onclick="handleAuth()">Sign in with Google</button>
+    <button style="background:none;border:1px solid #2a2a35;color:#6b6b80;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;letter-spacing:1px;" onclick="openSetup()">⚙ SETUP</button>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT: NOTE ENTRY -->
+  <div>
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="panel-header">
+        <span class="panel-title">📝 New Note</span>
+        <span id="folder-display" class="folder-pill" style="display:none;">📁 StockNotes</span>
+      </div>
+      <div class="panel-body">
+
+        <div class="voice-hint">
+          <div class="voice-dot"></div>
+          <span>WisprFlow ready — click the note field and dictate. Works on Android, iOS & Windows.</span>
+        </div>
+
+        <!-- TICKER + PRICE -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div class="form-row" style="margin:0;">
+            <label>Ticker Symbol</label>
+            <input type="text" id="ticker-field" placeholder="RELIANCE" maxlength="20" />
+          </div>
+          <div class="form-row" style="margin:0;">
+            <label>Price at Note (₹/$)</label>
+            <input type="text" id="price-field" placeholder="e.g. 2450.50" style="font-family:'DM Mono',monospace;" />
+          </div>
+        </div>
+
+        <!-- NOTE TYPE + SENTIMENT -->
+        <div class="meta-row">
+          <div class="form-row" style="margin:0;">
+            <label>Note Type</label>
+            <select id="note-type">
+              <option value="THESIS">📐 Thesis</option>
+              <option value="TRADE">📈 Trade</option>
+              <option value="RISK">⚠️ Risk</option>
+              <option value="EARNINGS">📊 Earnings</option>
+              <option value="WATCHLIST">👁 Watchlist</option>
+            </select>
+          </div>
+          <div class="form-row" style="margin:0;">
+            <label>Sentiment</label>
+            <select id="note-sentiment">
+              <option value="BULLISH">🟢 Bullish</option>
+              <option value="BEARISH">🔴 Bearish</option>
+              <option value="NEUTRAL">🟡 Neutral</option>
+              <option value="WATCHING">👀 Watching</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- NOTE BODY (WisprFlow target) -->
+        <div class="form-row">
+          <label>Note / Voice Dictation ↓</label>
+          <textarea id="note-body"
+                    placeholder="Click here and use WisprFlow to dictate your note, or type manually...
+
+Example: HDFC Bank looks strong above 1650. Volume pickup on daily chart. Key resistance at 1720. Planning to add on dip to 1640 with stop at 1600."
+          ></textarea>
+        </div>
+
+        <!-- ACTION ITEMS (optional explicit) -->
+        <div class="form-row">
+          <label>Action Items (optional — extracted automatically)</label>
+          <input type="text" id="action-items-field"
+                 placeholder="e.g. Buy 100 shares on dip, Set stop-loss at 2400, Review Q2 results" />
+        </div>
+
+        <button id="save-btn" onclick="saveNote()">
+          <span id="save-btn-text">💾 SAVE TO GOOGLE DRIVE</span>
+          <div class="btn-ripple"></div>
+        </button>
+
+        <button id="digest-btn" onclick="openDigest()">
+          🔍 SCAN FOLDER & EMAIL ACTION ITEMS
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: RECENT NOTES -->
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📋 Recent Notes</span>
+        <button onclick="loadNotes()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;">↻ Refresh</button>
+      </div>
+
+      <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Search ticker or keyword…" oninput="filterNotes()" />
+      </div>
+
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-chip active" data-filter="ALL" onclick="setFilter('ALL', this)">All</button>
+        <button class="filter-chip" data-filter="THESIS" onclick="setFilter('THESIS', this)">Thesis</button>
+        <button class="filter-chip" data-filter="TRADE" onclick="setFilter('TRADE', this)">Trade</button>
+        <button class="filter-chip" data-filter="RISK" onclick="setFilter('RISK', this)">Risk</button>
+        <button class="filter-chip" data-filter="EARNINGS" onclick="setFilter('EARNINGS', this)">Earnings</button>
+        <button class="filter-chip" data-filter="WATCHLIST" onclick="setFilter('WATCHLIST', this)">Watchlist</button>
+      </div>
+
+      <div class="panel-body" id="notes-container" style="max-height:600px;overflow-y:auto;padding:12px;">
+        <div class="empty-state">
+          <div class="empty-icon">📡</div>
+          <div class="empty-text">Sign in with Google to load your notes from Drive</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- DIGEST MODAL -->
+<div id="digest-modal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <button class="modal-close" onclick="closeDigest()">✕</button>
+    <div class="modal-title">ACTION ITEMS DIGEST</div>
+    <div id="digest-status" style="font-size:13px;color:var(--muted);margin-bottom:12px;">Scanning your StockNotes folder…</div>
+    <div id="digest-content" class="digest-output" style="display:none;"></div>
+    <button class="send-email-btn" id="send-email-btn" style="display:none;" onclick="sendDigestEmail()">
+      📧 OPEN IN EMAIL CLIENT
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG & STATE
+// ══════════════════════════════════════════
+const CONFIG_KEY = 'stocknotes_config';
+let config = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+
+let accessToken = null;
+let driveFolderId = null;
+let allNotes = [];
+let activeFilter = 'ALL';
+let digestText = '';
+
+// ══════════════════════════════════════════
+//  SETUP
+// ══════════════════════════════════════════
+function saveSetup() {
+  const clientId = document.getElementById('client-id-input').value.trim();
+  const folderName = document.getElementById('folder-name-input').value.trim() || 'StockNotes';
+  const email = document.getElementById('email-input').value.trim();
+
+  if (!clientId) { alert('Please enter your Google OAuth Client ID'); return; }
+
+  config = { clientId, folderName, email };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+
+  document.getElementById('setup-screen').style.display = 'none';
+  loadGoogleAPI();
+}
+
+function openSetup() {
+  document.getElementById('client-id-input').value = config.clientId || '';
+  document.getElementById('folder-name-input').value = config.folderName || 'StockNotes';
+  document.getElementById('email-input').value = config.email || '';
+  document.getElementById('setup-screen').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════
+//  GOOGLE API LOAD
+// ══════════════════════════════════════════
+function loadGoogleAPI() {
+  if (!config.clientId) {
+    document.getElementById('setup-screen').style.display = 'flex';
+    return;
+  }
+
+  // Update folder display
+  document.getElementById('folder-display').textContent = '📁 ' + (config.folderName || 'StockNotes');
+  document.getElementById('folder-display').style.display = 'inline-flex';
+
+  // Load Google Identity Services
+  const gsiScript = document.createElement('script');
+  gsiScript.src = 'https://accounts.google.com/gsi/client';
+  gsiScript.onload = initGSI;
+  document.head.appendChild(gsiScript);
+}
+
+function initGSI() {
+  // Token client for Drive access
+  window.tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: config.clientId,
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
+    callback: async (response) => {
+      if (response.error) { showToast('Auth error: ' + response.error, 'error'); return; }
+      accessToken = response.access_token;
+      onSignedIn();
+    }
+  });
+}
+
+function handleAuth() {
+  if (!config.clientId) { openSetup(); return; }
+  if (accessToken) {
+    // Sign out
+    google.accounts.oauth2.revoke(accessToken, () => {
+      accessToken = null;
+      driveFolderId = null;
+      allNotes = [];
+      renderNotes([]);
+      document.getElementById('auth-btn').textContent = 'Sign in with Google';
+      document.getElementById('auth-btn').classList.remove('signed-in');
+      document.getElementById('user-avatar').style.display = 'none';
+      showToast('Signed out', 'info');
+    });
+  } else {
+    window.tokenClient.requestAccessToken();
+  }
+}
+
+async function onSignedIn() {
+  document.getElementById('auth-btn').textContent = 'Sign out';
+  document.getElementById('auth-btn').classList.add('signed-in');
+  showToast('Signed in! Loading notes…', 'success');
+  await ensureFolder();
+  await loadNotes();
+}
+
+// ══════════════════════════════════════════
+//  GOOGLE DRIVE API HELPERS
+// ══════════════════════════════════════════
+async function driveRequest(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Drive API error ' + res.status);
+  }
+  return res.json();
+}
+
+async function ensureFolder() {
+  const name = config.folderName || 'StockNotes';
+  // Search for existing folder
+  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const result = await driveRequest(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`
+  );
+  if (result.files && result.files.length > 0) {
+    driveFolderId = result.files[0].id;
+    showToast(`Connected to folder: ${name}`, 'success');
+    return;
+  }
+  // Create folder
+  const folder = await driveRequest('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    body: JSON.stringify({
+      name,
+      mimeType: 'application/vnd.google-apps.folder'
+    })
+  });
+  driveFolderId = folder.id;
+  showToast(`Created Drive folder: ${name}`, 'success');
+}
+
+// ══════════════════════════════════════════
+//  DOCX CREATION (in-browser, pure JS)
+//  Creates a minimal valid OOXML .docx as a Blob
+// ══════════════════════════════════════════
+function createDocxBlob(noteData) {
+  const { ticker, price, type, sentiment, body, actions, timestamp } = noteData;
+  const dateStr = new Date(timestamp).toLocaleString('en-IN', {
+    dateStyle: 'full', timeStyle: 'short'
+  });
+
+  const escXml = s => String(s || '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+
+  const bodyLines = (body || '').split('\n').filter(l => l.trim());
+  const actionLines = (actions || '').split(',').map(a => a.trim()).filter(Boolean);
+
+  const makePara = (text, bold = false, size = 24, color = '000000') =>
+    `<w:p><w:pPr><w:spacing w:after="120"/></w:pPr><w:r>
+      <w:rPr>
+        ${bold ? '<w:b/>' : ''}
+        <w:sz w:val="${size}"/>
+        <w:color w:val="${color}"/>
+      </w:rPr>
+      <w:t xml:space="preserve">${escXml(text)}</w:t>
+    </w:r></w:p>`;
+
+  const makeHeading = (text) =>
+    `<w:p><w:pPr><w:pStyle w:val="Heading1"/><w:spacing w:after="200"/></w:pPr>
+      <w:r><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="1A7A3A"/></w:rPr>
+      <w:t>${escXml(text)}</w:t></w:r></w:p>`;
+
+  const makeDivider = () =>
+    `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="CCCCCC"/></w:pBdr><w:spacing w:after="200"/></w:pPr></w:p>`;
+
+  const noteParas = bodyLines.map(l => makePara(l)).join('\n');
+  const actionParas = actionLines.length
+    ? actionLines.map(a => `<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>
+        <w:r><w:rPr><w:color w:val="CC3300"/></w:rPr><w:t xml:space="preserve">${escXml(a)}</w:t></w:r></w:p>`).join('\n')
+    : makePara('(No explicit action items — review note for implicit actions)', false, 22, '888888');
+
+  const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"
+  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<w:body>
+  ${makeHeading('📈 ' + ticker + ' — ' + type)}
+  ${makePara('Date: ' + dateStr, true, 22, '444444')}
+  ${price ? makePara('Price at Note: ₹' + price, true, 22, '1A7A3A') : ''}
+  ${makePara('Sentiment: ' + sentiment, false, 22, '444444')}
+  ${makeDivider()}
+  ${makePara('NOTE', true, 24, '000000')}
+  ${noteParas}
+  ${makeDivider()}
+  ${makePara('ACTION ITEMS', true, 24, 'CC3300')}
+  ${actionParas}
+  <w:sectPr>
+    <w:pgSz w:w="12240" w:h="15840"/>
+    <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/>
+  </w:sectPr>
+</w:body>
+</w:document>`;
+
+  const relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
+</Relationships>`;
+
+  const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:docDefaults><w:rPrDefault><w:rPr>
+    <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+    <w:sz w:val="24"/>
+  </w:rPr></w:rPrDefault></w:docDefaults>
+  <w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/>
+    <w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="24"/></w:rPr>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/>
+    <w:basedOn w:val="Normal"/>
+    <w:pPr><w:outlineLvl w:val="0"/></w:pPr>
+    <w:rPr><w:b/><w:sz w:val="32"/></w:rPr>
+  </w:style>
+</w:styles>`;
+
+  const numberingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:abstractNum w:abstractNumId="0">
+    <w:lvl w:ilvl="0">
+      <w:start w:val="1"/>
+      <w:numFmt w:val="bullet"/>
+      <w:lvlText w:val="•"/>
+      <w:lvlJc w:val="left"/>
+      <w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr>
+    </w:lvl>
+  </w:abstractNum>
+  <w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>
+</w:numbering>`;
+
+  const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+  <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>
+</Types>`;
+
+  const rootRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+  // Build ZIP using a minimal JS zip builder
+  return buildZip([
+    { name: '[Content_Types].xml', data: contentTypesXml },
+    { name: '_rels/.rels', data: rootRelsXml },
+    { name: 'word/document.xml', data: docXml },
+    { name: 'word/_rels/document.xml.rels', data: relsXml },
+    { name: 'word/styles.xml', data: stylesXml },
+    { name: 'word/numbering.xml', data: numberingXml },
+  ]);
+}
+
+// ── Minimal ZIP builder (no external libs) ──
+function buildZip(files) {
+  const enc = new TextEncoder();
+  const localHeaders = [];
+  const centralDir = [];
+  let offset = 0;
+
+  const crc32Table = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c;
+    }
+    return t;
+  })();
+
+  function crc32(data) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < data.length; i++) crc = crc32Table[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function dosDate() {
+    const d = new Date();
+    return ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  }
+  function dosTime() {
+    const d = new Date();
+    return (d.getHours() << 11) | (d.getMinutes() << 5) | Math.floor(d.getSeconds() / 2);
+  }
+
+  function u16(v) { return [v & 0xFF, (v >> 8) & 0xFF]; }
+  function u32(v) { return [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF]; }
+
+  const parts = [];
+
+  for (const file of files) {
+    const nameBytes = enc.encode(file.name);
+    const dataBytes = typeof file.data === 'string' ? enc.encode(file.data) : file.data;
+    const crc = crc32(dataBytes);
+    const dt = dosDate();
+    const tm = dosTime();
+
+    // Local file header
+    const lh = new Uint8Array([
+      0x50, 0x4B, 0x03, 0x04, // sig
+      20, 0,                   // version needed
+      0, 0,                    // flags
+      0, 0,                    // compression (stored)
+      ...u16(tm), ...u16(dt),
+      ...u32(crc),
+      ...u32(dataBytes.length),
+      ...u32(dataBytes.length),
+      ...u16(nameBytes.length),
+      0, 0,                    // extra len
+      ...nameBytes
+    ]);
+
+    // Central directory entry
+    const cd = new Uint8Array([
+      0x50, 0x4B, 0x01, 0x02, // sig
+      20, 0,                   // version made
+      20, 0,                   // version needed
+      0, 0,                    // flags
+      0, 0,                    // compression
+      ...u16(tm), ...u16(dt),
+      ...u32(crc),
+      ...u32(dataBytes.length),
+      ...u32(dataBytes.length),
+      ...u16(nameBytes.length),
+      0, 0,                    // extra
+      0, 0,                    // comment
+      0, 0,                    // disk start
+      0, 0,                    // int attrib
+      0, 0, 0, 0,              // ext attrib
+      ...u32(offset),
+      ...nameBytes
+    ]);
+
+    localHeaders.push(lh);
+    parts.push(lh, dataBytes);
+    centralDir.push(cd);
+    offset += lh.length + dataBytes.length;
+  }
+
+  const cdOffset = offset;
+  const cdBytes = centralDir.reduce((a, b) => a + b.length, 0);
+
+  const eocd = new Uint8Array([
+    0x50, 0x4B, 0x05, 0x06,
+    0, 0, 0, 0,
+    ...u16(files.length),
+    ...u16(files.length),
+    ...u32(cdBytes),
+    ...u32(cdOffset),
+    0, 0
+  ]);
+
+  const allParts = [...parts, ...centralDir, eocd];
+  const total = allParts.reduce((s, p) => s + p.length, 0);
+  const buf = new Uint8Array(total);
+  let pos = 0;
+  for (const p of allParts) { buf.set(p, pos); pos += p.length; }
+
+  return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+// ══════════════════════════════════════════
+//  SAVE NOTE TO DRIVE
+// ══════════════════════════════════════════
+async function saveNote() {
+  if (!accessToken) { showToast('Please sign in with Google first', 'error'); return; }
+  if (!driveFolderId) { showToast('Drive folder not ready, please wait…', 'info'); return; }
+
+  const ticker = (document.getElementById('ticker-field').value || '').toUpperCase().trim();
+  const price = document.getElementById('price-field').value.trim();
+  const type = document.getElementById('note-type').value;
+  const sentiment = document.getElementById('note-sentiment').value;
+  const body = document.getElementById('note-body').value.trim();
+  const actions = document.getElementById('action-items-field').value.trim();
+
+  if (!ticker) { showToast('Please enter a ticker symbol', 'error'); return; }
+  if (!body) { showToast('Note body is empty', 'error'); return; }
+
+  const btn = document.getElementById('save-btn');
+  const btnText = document.getElementById('save-btn-text');
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner"></span> Saving…';
+
+  const timestamp = new Date().toISOString();
+  const noteData = { ticker, price, type, sentiment, body, actions, timestamp };
+
+  // Filename: TICKER_TYPE_YYYYMMDD_HHMMSS.docx
+  const dt = timestamp.replace(/[-:T]/g, '').slice(0, 15);
+  const filename = `${ticker}_${type}_${dt}.docx`;
+
+  try {
+    const blob = createDocxBlob(noteData);
+
+    // Multipart upload to Drive
+    const boundary = 'boundary_stocknotes_' + Date.now();
+    const meta = JSON.stringify({ name: filename, parents: [driveFolderId] });
+    const metaPart = `--${boundary}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n`;
+    const dataPart = `--${boundary}\r\nContent-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document\r\n\r\n`;
+    const endPart = `\r\n--${boundary}--`;
+
+    const enc = new TextEncoder();
+    const body_bytes = new Uint8Array([
+      ...enc.encode(metaPart),
+      ...enc.encode(dataPart),
+      ...new Uint8Array(await blob.arrayBuffer()),
+      ...enc.encode(endPart)
+    ]);
+
+    const res = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + accessToken,
+          'Content-Type': `multipart/related; boundary=${boundary}`
+        },
+        body: body_bytes
+      }
+    );
+
+    if (!res.ok) throw new Error('Upload failed: ' + res.status);
+    const saved = await res.json();
+
+    // Save to local cache
+    const cached = JSON.parse(localStorage.getItem('stocknotes_local') || '[]');
+    cached.unshift({ ...noteData, driveId: saved.id, filename });
+    localStorage.setItem('stocknotes_local', JSON.stringify(cached.slice(0, 100)));
+
+    showToast(`✅ Saved ${ticker} note to Drive!`, 'success');
+    resetForm();
+    await loadNotes();
+
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btnText.innerHTML = '💾 SAVE TO GOOGLE DRIVE';
+  }
+}
+
+function resetForm() {
+  document.getElementById('ticker-field').value = '';
+  document.getElementById('price-field').value = '';
+  document.getElementById('note-body').value = '';
+  document.getElementById('action-items-field').value = '';
+  document.getElementById('note-type').value = 'THESIS';
+  document.getElementById('note-sentiment').value = 'BULLISH';
+}
+
+// ══════════════════════════════════════════
+//  LOAD & DISPLAY NOTES
+// ══════════════════════════════════════════
+async function loadNotes() {
+  if (!accessToken || !driveFolderId) return;
+
+  const container = document.getElementById('notes-container');
+  container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);"><span class="spinner"></span><br><br>Loading notes…</div>';
+
+  try {
+    const q = `'${driveFolderId}' in parents and name contains '.docx' and trashed=false`;
+    const res = await driveRequest(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,createdTime,size)&orderBy=createdTime desc&pageSize=50`
+    );
+
+    allNotes = (res.files || []).map(f => {
+      // Parse metadata from filename: TICKER_TYPE_YYYYMMDDTHHMMSS.docx
+      const parts = f.name.replace('.docx', '').split('_');
+      const ticker = parts[0] || '?';
+      const type = parts[1] || 'NOTE';
+      const tsRaw = parts[2] || '';
+      return { ticker, type, filename: f.name, driveId: f.id, createdTime: f.createdTime || tsRaw };
+    });
+
+    filterNotes();
+  } catch (e) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${e.message}</div></div>`;
+  }
+}
+
+function filterNotes() {
+  const query = (document.getElementById('search-input').value || '').toLowerCase();
+  let filtered = allNotes;
+  if (activeFilter !== 'ALL') filtered = filtered.filter(n => n.type === activeFilter);
+  if (query) filtered = filtered.filter(n =>
+    n.ticker.toLowerCase().includes(query) || n.filename.toLowerCase().includes(query)
+  );
+  renderNotes(filtered);
+}
+
+function setFilter(filter, el) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  filterNotes();
+}
+
+function renderNotes(notes) {
+  const container = document.getElementById('notes-container');
+  if (!notes.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-text">No notes found. Save your first note!</div>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = notes.map(n => {
+    const d = new Date(n.createdTime);
+    const dateStr = isNaN(d) ? n.createdTime : d.toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
+    const timeStr = isNaN(d) ? '' : d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+    return `
+      <div class="note-card">
+        <div class="note-card-header">
+          <span class="note-ticker">${n.ticker}</span>
+          <span class="note-meta">
+            <span class="note-tag ${n.type}">${n.type}</span>
+            <span class="note-time">${dateStr} ${timeStr}</span>
+          </span>
+        </div>
+        <div class="note-body" style="font-size:12px;color:var(--muted);">${n.filename}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  DIGEST — SCAN FOLDER & EMAIL ACTION ITEMS
+// ══════════════════════════════════════════
+async function openDigest() {
+  if (!accessToken) { showToast('Please sign in first', 'error'); return; }
+  if (!driveFolderId) { showToast('Drive not ready', 'error'); return; }
+
+  document.getElementById('digest-modal').style.display = 'flex';
+  document.getElementById('digest-status').textContent = 'Scanning your StockNotes folder…';
+  document.getElementById('digest-content').style.display = 'none';
+  document.getElementById('send-email-btn').style.display = 'none';
+
+  try {
+    // List all docx files
+    const q = `'${driveFolderId}' in parents and name contains '.docx' and trashed=false`;
+    const res = await driveRequest(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,createdTime)&orderBy=createdTime desc&pageSize=100`
+    );
+
+    const files = res.files || [];
+    document.getElementById('digest-status').textContent = `Found ${files.length} note(s). Extracting action items…`;
+
+    if (!files.length) {
+      document.getElementById('digest-status').textContent = 'No notes found in your Drive folder.';
+      return;
+    }
+
+    // Extract action items from filenames + parse metadata
+    // Group by ticker
+    const byTicker = {};
+    for (const f of files) {
+      const parts = f.name.replace('.docx', '').split('_');
+      const ticker = parts[0] || 'UNKNOWN';
+      const type = parts[1] || 'NOTE';
+      const date = new Date(f.createdTime);
+      const dateStr = isNaN(date) ? f.createdTime : date.toLocaleDateString('en-IN', { dateStyle: 'medium' });
+
+      if (!byTicker[ticker]) byTicker[ticker] = [];
+      byTicker[ticker].push({ type, dateStr, name: f.name, id: f.id });
+    }
+
+    // Build digest text
+    const now = new Date().toLocaleString('en-IN', { dateStyle: 'full', timeStyle: 'short' });
+    let lines = [`STOCKNOTES — ACTION ITEMS DIGEST`, `Generated: ${now}`, `${'─'.repeat(50)}`, ''];
+
+    const actionItems = [];
+    let noteCount = 0;
+
+    for (const [ticker, notes] of Object.entries(byTicker)) {
+      lines.push(`▶ ${ticker} (${notes.length} note${notes.length > 1 ? 's' : ''})`);
+      for (const n of notes) {
+        lines.push(`  • [${n.type}] ${n.dateStr} — ${n.name}`);
+        noteCount++;
+        // Flag TRADE, RISK, EARNINGS as action items
+        if (['TRADE', 'RISK', 'EARNINGS'].includes(n.type)) {
+          actionItems.push(`${ticker}: Review ${n.type.toLowerCase()} note from ${n.dateStr}`);
+        }
+      }
+      lines.push('');
+    }
+
+    lines.push(`${'─'.repeat(50)}`);
+    lines.push(`ACTION ITEMS REQUIRING ATTENTION (${actionItems.length}):`);
+    lines.push('');
+    if (actionItems.length) {
+      actionItems.forEach((a, i) => lines.push(`  ${i + 1}. ${a}`));
+    } else {
+      lines.push('  No urgent action items found.');
+    }
+
+    lines.push('');
+    lines.push(`Total notes scanned: ${noteCount} across ${Object.keys(byTicker).length} ticker(s)`);
+    lines.push('Powered by StockNotes + Google Drive');
+
+    digestText = lines.join('\n');
+
+    document.getElementById('digest-content').textContent = digestText;
+    document.getElementById('digest-content').style.display = 'block';
+    document.getElementById('digest-status').textContent = `✅ Digest ready — ${files.length} notes, ${actionItems.length} action items`;
+    document.getElementById('send-email-btn').style.display = 'block';
+
+  } catch (e) {
+    document.getElementById('digest-status').textContent = '❌ Error: ' + e.message;
+  }
+}
+
+function closeDigest() {
+  document.getElementById('digest-modal').style.display = 'none';
+}
+
+function sendDigestEmail() {
+  const email = config.email || '';
+  const subject = encodeURIComponent(`StockNotes — Action Items Digest ${new Date().toLocaleDateString('en-IN')}`);
+  const body = encodeURIComponent(digestText);
+  const mailto = `mailto:${email}?subject=${subject}&body=${body}`;
+  window.location.href = mailto;
+  showToast('Opening email client…', 'info');
+}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  if (config.clientId) {
+    document.getElementById('setup-screen').style.display = 'none';
+    loadGoogleAPI();
+  }
+
+  // Load local cached notes while waiting for auth
+  const cached = JSON.parse(localStorage.getItem('stocknotes_local') || '[]');
+  if (cached.length) {
+    allNotes = cached.map(n => ({
+      ticker: n.ticker,
+      type: n.type,
+      filename: n.filename,
+      driveId: n.driveId,
+      createdTime: n.timestamp
+    }));
+    renderNotes(allNotes);
+  }
+});
+</script>
+</body>
+</html>
