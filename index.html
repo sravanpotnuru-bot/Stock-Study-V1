@@ -310,7 +310,7 @@ Example: HDFC Bank looks strong above 1650. Volume pickup on daily chart. Key re
 // ══ CONFIG ══
 const CLIENT_ID   = '423488104709-c2cjqlshgqds5pjrrbbn4rlmn6qjsl64.apps.googleusercontent.com';
 const FOLDER_NAME = 'StockNotes';
-const SCOPES      = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.email';
+const SCOPES      = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/userinfo.email';
 
 // ══ STATE ══
 let accessToken = null, tokenExpiry = 0, driveFolderId = null;
@@ -480,84 +480,10 @@ function validateForm() {
   return valid;
 }
 
-// ══ DOCX BUILDER ══
-function createDocxBlob(noteData) {
-  var ticker=noteData.ticker, price=noteData.price, type=noteData.type;
-  var sentiment=noteData.sentiment, body=noteData.body;
-  var actions=noteData.actions, timestamp=noteData.timestamp, byWhen=noteData.byWhen;
-
-  var dateStr = new Date(timestamp).toLocaleString('en-IN',{dateStyle:'full',timeStyle:'short'});
-  var byWhenStr = byWhen ? new Date(byWhen).toLocaleDateString('en-IN',{dateStyle:'long'}) : 'Not set';
-
-  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function para(text,bold,size,color){
-    bold=bold||false; size=size||24; color=color||'000000';
-    return '<w:p><w:pPr><w:spacing w:after="120"/></w:pPr><w:r>'+
-      '<w:rPr>'+(bold?'<w:b/>':'')+'<w:sz w:val="'+size+'"/><w:color w:val="'+color+'"/></w:rPr>'+
-      '<w:t xml:space="preserve">'+esc(text)+'</w:t></w:r></w:p>';
-  }
-  var divider='<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="CCCCCC"/></w:pBdr><w:spacing w:after="200"/></w:pPr></w:p>';
-  var bodyLines=(body||'').split('\n').filter(function(l){return l.trim();});
-  var actionLines=(actions||'').split('\n').filter(function(l){return l.trim();});
-
-  var actionParas = actionLines.length
-    ? actionLines.map(function(a){
-        return '<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>'+
-          '<w:r><w:rPr><w:color w:val="CC3300"/></w:rPr><w:t xml:space="preserve">'+esc(a)+'</w:t></w:r></w:p>';
-      }).join('\n')
-    : para('No action items specified',false,22,'888888');
-
-  var docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+
-    '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="1A7A3A"/></w:rPr>'+
-    '<w:t>'+esc('📈 '+ticker+' — '+type)+'</w:t></w:r></w:p>'+
-    para('Date: '+dateStr,true,22,'444444')+
-    (price?para('Price: '+price,true,22,'1A7A3A'):'')+
-    para('Sentiment: '+sentiment,false,22,'444444')+
-    para('Revisit By: '+byWhenStr,true,22,'CC3300')+
-    divider+para('NOTE',true,24,'000000')+
-    bodyLines.map(function(l){return para(l);}).join('\n')+
-    divider+para('ACTION ITEMS',true,24,'CC3300')+
-    actionParas+
-    '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>'+
-    '</w:body></w:document>';
-
-  var relsXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>';
-  var stylesXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="24"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style></w:styles>';
-  var numberingXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>';
-  var ctXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>';
-  var rootRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
-
-  return buildZip([
-    {name:'[Content_Types].xml',data:ctXml},{name:'_rels/.rels',data:rootRels},
-    {name:'word/document.xml',data:docXml},{name:'word/_rels/document.xml.rels',data:relsXml},
-    {name:'word/styles.xml',data:stylesXml},{name:'word/numbering.xml',data:numberingXml}
-  ]);
-}
-
-function buildZip(files) {
-  var enc=new TextEncoder();
-  var t32=(function(){var t=new Uint32Array(256);for(var i=0;i<256;i++){var c=i;for(var j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c;}return t;})();
-  function crc32(d){var c=0xFFFFFFFF;for(var i=0;i<d.length;i++)c=t32[(c^d[i])&0xFF]^(c>>>8);return(c^0xFFFFFFFF)>>>0;}
-  function u16(v){return[v&0xFF,(v>>8)&0xFF];}
-  function u32(v){return[v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF];}
-  var dd=new Date(),dt=((dd.getFullYear()-1980)<<9)|((dd.getMonth()+1)<<5)|dd.getDate();
-  var tm=(dd.getHours()<<11)|(dd.getMinutes()<<5)|Math.floor(dd.getSeconds()/2);
-  var parts=[],cds=[],offset=0;
-  for(var fi=0;fi<files.length;fi++){
-    var f=files[fi],nb=enc.encode(f.name),db=typeof f.data==='string'?enc.encode(f.data):f.data,crc=crc32(db);
-    var lh=new Uint8Array([0x50,0x4B,0x03,0x04,20,0,0,0,0,0].concat(u16(tm),u16(dt),u32(crc),u32(db.length),u32(db.length),u16(nb.length),[0,0]).concat(Array.from(nb)));
-    var cd=new Uint8Array([0x50,0x4B,0x01,0x02,20,0,20,0,0,0,0,0].concat(u16(tm),u16(dt),u32(crc),u32(db.length),u32(db.length),u16(nb.length),[0,0,0,0,0,0,0,0,0,0,0,0]).concat(u32(offset)).concat(Array.from(nb)));
-    parts.push(lh,db);cds.push(cd);offset+=lh.length+db.length;
-  }
-  var cdOff=offset,cdLen=cds.reduce(function(s,c){return s+c.length;},0);
-  var eocd=new Uint8Array([0x50,0x4B,0x05,0x06,0,0,0,0].concat(u16(files.length),u16(files.length),u32(cdLen),u32(cdOff),[0,0]));
-  var all=parts.concat(cds,[eocd]),total=all.reduce(function(s,p){return s+p.length;},0),buf=new Uint8Array(total),pos=0;
-  for(var i=0;i<all.length;i++){buf.set(all[i],pos);pos+=all[i].length;}
-  return new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-}
-
-// ══ SAVE NOTE ══
+// ══ SAVE NOTE — Google Docs API ══
+// Creates a native Google Doc in Drive.
+// No ZIP, no XML, no blobs — just a plain API call.
+// File name encodes all metadata for the mailer to parse.
 async function saveNote() {
   if (!requireSignIn()) return;
   if (!validateForm()) { showToast('Please fill in all required fields','error'); return; }
@@ -566,46 +492,100 @@ async function saveNote() {
     try { await ensureFolder(); } catch(e) { showToast('Drive error: '+e.message,'error'); return; }
   }
 
-  var ticker   = document.getElementById('ticker-field').value.toUpperCase().trim();
-  var price    = document.getElementById('price-field').value.trim();
-  var type     = document.getElementById('note-type').value;
-  var sentiment= document.getElementById('note-sentiment').value;
-  var body     = document.getElementById('note-body').value.trim();
-  var actions  = document.getElementById('action-items-field').value.trim();
-  var byWhen   = document.getElementById('bywhen-field').value; // YYYY-MM-DD
+  var ticker    = document.getElementById('ticker-field').value.toUpperCase().trim();
+  var price     = document.getElementById('price-field').value.trim();
+  var type      = document.getElementById('note-type').value;
+  var sentiment = document.getElementById('note-sentiment').value;
+  var body      = document.getElementById('note-body').value.trim();
+  var actions   = document.getElementById('action-items-field').value.trim();
+  var byWhen    = document.getElementById('bywhen-field').value; // YYYY-MM-DD
 
   var btn=document.getElementById('save-btn'), btnText=document.getElementById('save-btn-text');
   btn.disabled=true; btnText.innerHTML='<span class="spinner"></span> Saving…';
 
   var timestamp = new Date().toISOString();
-  var noteData  = {ticker,price,type,sentiment,body,actions,byWhen,timestamp};
+  var noteDt    = timestamp.replace(/[-:T]/g,'').slice(0,15);        // 20260225T103045
+  var byWhenFn  = byWhen.replace(/-/g,'');                           // 20260301
+  // Filename encodes: TICKER_TYPE_NOTEDATE_BYWHEN
+  // e.g. RELIANCE_TRADE_20260225T103045_20260301
+  var docTitle  = ticker+'_'+type+'_'+noteDt+'_'+byWhenFn;
 
-  // Filename encodes all metadata: TICKER_TYPE_NOTEDATE_BYWHEN.docx
-  // e.g. RELIANCE_TRADE_20260225T103045_20260301.docx
-  var noteDt  = timestamp.replace(/[-:T]/g,'').slice(0,15);
-  var byWhenFn = byWhen.replace(/-/g,''); // YYYYMMDD
-  var filename = ticker+'_'+type+'_'+noteDt+'_'+byWhenFn+'.docx';
+  // Build structured plain text content for the Google Doc
+  var dateStr   = new Date(timestamp).toLocaleString('en-IN',{dateStyle:'full',timeStyle:'short'});
+  var byWhenStr = new Date(byWhen).toLocaleDateString('en-IN',{dateStyle:'long'});
+
+  var docContent = [
+    '═══════════════════════════════════════',
+    '📈 ' + ticker + ' — ' + type,
+    '═══════════════════════════════════════',
+    '',
+    'DATE:       ' + dateStr,
+    'PRICE:      ' + (price || '—'),
+    'SENTIMENT:  ' + sentiment,
+    'TYPE:       ' + type,
+    'REVISIT BY: ' + byWhenStr,
+    '',
+    '───────────────────────────────────────',
+    'NOTE',
+    '───────────────────────────────────────',
+    body,
+    '',
+    '───────────────────────────────────────',
+    'ACTION ITEMS',
+    '───────────────────────────────────────',
+    actions,
+    '',
+    '═══════════════════════════════════════',
+    'Saved via StockNotes · ' + timestamp,
+    '═══════════════════════════════════════'
+  ].join('\n');
 
   try {
-    var blob = createDocxBlob(noteData);
-    var boundary='sn_'+Date.now();
-    var meta=JSON.stringify({name:filename, parents:[driveFolderId]});
-    var enc=new TextEncoder();
-    var bodyBytes=new Uint8Array(
-      Array.from(enc.encode('--'+boundary+'\r\nContent-Type: application/json\r\n\r\n'+meta+'\r\n')).concat(
-      Array.from(enc.encode('--'+boundary+'\r\nContent-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document\r\n\r\n'))).concat(
-      Array.from(new Uint8Array(await blob.arrayBuffer()))).concat(
-      Array.from(enc.encode('\r\n--'+boundary+'--')))
-    );
-    var res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-      {method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'multipart/related; boundary='+boundary},body:bodyBytes});
-    if (!res.ok) throw new Error('Upload failed: '+res.status);
+    // Step 1: Create an empty Google Doc with the right name and parent folder
+    var createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + accessToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name:     docTitle,
+        mimeType: 'application/vnd.google-apps.document',
+        parents:  [driveFolderId]
+      })
+    });
+    if (!createRes.ok) throw new Error('Create failed: ' + createRes.status);
+    var created = await createRes.json();
+    var docId = created.id;
 
-    showToast('✅ '+ticker+' note saved to Drive!','success');
+    // Step 2: Write the content into the Doc using the Docs API batchUpdate
+    var requests = [{
+      insertText: {
+        location: { index: 1 },
+        text: docContent
+      }
+    }];
+
+    var writeRes = await fetch('https://docs.googleapis.com/v1/documents/' + docId + ':batchUpdate', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + accessToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ requests: requests })
+    });
+    if (!writeRes.ok) {
+      var errBody = await writeRes.json().catch(function(){return{};});
+      throw new Error('Write failed: ' + (errBody.error && errBody.error.message || writeRes.status));
+    }
+
+    showToast('✅ ' + ticker + ' note saved to Google Drive!', 'success');
     resetForm();
     await loadNotes();
+
   } catch(e) {
-    showToast('Save error: '+e.message,'error');
+    showToast('Save error: ' + e.message, 'error');
+    console.error(e);
   } finally {
     btn.disabled=false; btnText.textContent='💾 SAVE TO GOOGLE DRIVE';
   }
@@ -632,11 +612,11 @@ async function loadNotes() {
   var container=document.getElementById('notes-container');
   container.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);"><span class="spinner"></span><br><br>Loading…</div>';
   try {
-    var q="'"+driveFolderId+"' in parents and name contains '.docx' and trashed=false";
+    var q="'"+driveFolderId+"' in parents and mimeType='application/vnd.google-apps.document' and trashed=false";
     var res=await driveRequest('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(q)+'&fields=files(id,name,createdTime)&orderBy=createdTime desc&pageSize=100');
     allNotes=(res.files||[]).map(function(f){
       // Parse: TICKER_TYPE_NOTEDATE_BYWHEN.docx
-      var p=f.name.replace('.docx','').split('_');
+      var p=f.name.split('_');  // Google Doc title: TICKER_TYPE_NOTEDATE_BYWHEN
       var ticker=p[0]||'?', type=p[1]||'NOTE';
       // by-when is last segment (YYYYMMDD)
       var byWhenRaw=p[p.length-1]||'';
