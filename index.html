@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="version" content="2.1">
 <title>StockNotes — Market Intelligence Capture</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -690,10 +693,10 @@
   <div class="logo">Stock<span>Notes</span></div>
   <div class="header-right">
     <img id="user-avatar" alt="User" />
-    <button onclick="newNote()" style="background:none;border:1px solid var(--accent);color:var(--accent);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:1px;transition:all 0.2s;" onmouseover="this.style.background='rgba(0,255,135,0.1)'" onmouseout="this.style.background='none'">✚ NEW NOTE</button>
-    <button onclick="window.close()" style="background:none;border:1px solid #3a2a2a;color:#ff6b35;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:1px;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,107,53,0.1)'" onmouseout="this.style.background='none'">✕ CLOSE</button>
-    <button id="auth-btn" onclick="handleAuth()">Sign in with Google</button>
-    <button style="background:none;border:1px solid #2a2a35;color:#6b6b80;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;letter-spacing:1px;" onclick="openSetup()">⚙</button>
+    <button onclick="newNote()" id="new-note-btn" style="display:none;background:none;border:1px solid var(--accent);color:var(--accent);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:1px;" onmouseover="this.style.background='rgba(0,255,135,0.1)'" onmouseout="this.style.background='none'">✚ NEW NOTE</button>
+    <button id="signout-btn" onclick="handleSignOut()" style="display:none;background:none;border:1px solid #3a2a2a;color:#ff6b35;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:1px;" onmouseover="this.style.background='rgba(255,107,53,0.1)'" onmouseout="this.style.background='none'">⏻ SIGN OUT</button>
+    <button id="signin-btn" onclick="handleSignIn()" style="background:var(--accent);color:#000;border:none;padding:8px 18px;border-radius:6px;font-family:DM Sans,sans-serif;font-weight:600;font-size:13px;cursor:pointer;letter-spacing:0.5px;">Sign in with Google</button>
+    <button style="background:none;border:1px solid #2a2a35;color:#6b6b80;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;" onclick="openSetup()" title="Settings">⚙</button>
   </div>
 </header>
 
@@ -885,41 +888,69 @@ function loadGoogleAPI() {
 }
 
 function initGSI() {
-  // Token client for Drive access
   window.tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: config.clientId,
     scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
     callback: async (response) => {
       if (response.error) { showToast('Auth error: ' + response.error, 'error'); return; }
       accessToken = response.access_token;
+      // Store token expiry (tokens last ~1hr)
+      localStorage.setItem('sn_token_time', Date.now());
       onSignedIn();
-    }
+    },
+    prompt: ''  // skip account chooser if already signed in
   });
-}
 
-function handleAuth() {
-  if (!config.clientId) { openSetup(); return; }
-  if (accessToken) {
-    // Sign out
-    google.accounts.oauth2.revoke(accessToken, () => {
-      accessToken = null;
-      driveFolderId = null;
-      allNotes = [];
-      renderNotes([]);
-      document.getElementById('auth-btn').textContent = 'Sign in with Google';
-      document.getElementById('auth-btn').classList.remove('signed-in');
-      document.getElementById('user-avatar').style.display = 'none';
-      showToast('Signed out', 'info');
-    });
-  } else {
-    window.tokenClient.requestAccessToken();
+  // Auto sign-in silently if user was recently signed in
+  const lastSignIn = parseInt(localStorage.getItem('sn_token_time') || '0');
+  const oneHour = 55 * 60 * 1000;
+  if (Date.now() - lastSignIn < oneHour) {
+    // Try silent token refresh
+    setTimeout(() => {
+      window.tokenClient.requestAccessToken({ prompt: '' });
+    }, 500);
   }
 }
 
+function handleSignIn() {
+  if (!window.tokenClient) {
+    showToast('Google API still loading, please wait…', 'info');
+    setTimeout(() => { if (window.tokenClient) window.tokenClient.requestAccessToken(); }, 1500);
+    return;
+  }
+  window.tokenClient.requestAccessToken();
+}
+
+function handleSignOut() {
+  if (!accessToken) return;
+  google.accounts.oauth2.revoke(accessToken, () => {});
+  accessToken = null;
+  driveFolderId = null;
+  allNotes = [];
+  renderNotes([]);
+  setSignedOutUI();
+  showToast('Signed out successfully', 'info');
+}
+
+function setSignedInUI(email) {
+  document.getElementById('signin-btn').style.display = 'none';
+  document.getElementById('signout-btn').style.display = 'inline-flex';
+  document.getElementById('new-note-btn').style.display = 'inline-flex';
+  if (email) {
+    document.getElementById('signout-btn').title = 'Signed in as ' + email;
+  }
+}
+
+function setSignedOutUI() {
+  document.getElementById('signin-btn').style.display = 'inline-block';
+  document.getElementById('signout-btn').style.display = 'none';
+  document.getElementById('new-note-btn').style.display = 'none';
+  document.getElementById('user-avatar').style.display = 'none';
+}
+
 async function onSignedIn() {
-  document.getElementById('auth-btn').textContent = 'Sign out';
-  document.getElementById('auth-btn').classList.add('signed-in');
-  showToast('Signed in! Loading notes…', 'success');
+  setSignedInUI(config.email);
+  showToast('✅ Signed in! Loading notes…', 'success');
   await ensureFolder();
   await loadNotes();
 }
@@ -1486,7 +1517,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadGoogleAPI();
   }
 
-  // Load local cached notes while waiting for auth
+  // Show cached notes instantly while auth loads
   const cached = JSON.parse(localStorage.getItem('stocknotes_local') || '[]');
   if (cached.length) {
     allNotes = cached.map(n => ({
