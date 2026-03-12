@@ -2,303 +2,444 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="4.0">
+<meta name="version" content="5.0">
 <title>StockNotes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-:root {
-  --bg:#0a0a0f; --surface:#111118; --surface2:#18181f;
-  --border:#2a2a35; --accent:#00ff87; --accent2:#0096ff;
-  --warn:#ff6b35; --text:#e8e8f0; --muted:#6b6b80;
-  --ticker-bg:#0d1f0d; --ticker-border:#1a4a1a;
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#08090d;--surface:#0f1016;--surface2:#15161e;--surface3:#1b1c26;
+  --border:#222334;--border2:#2e2f44;
+  --accent:#00e87a;--accent-dim:rgba(0,232,122,0.08);--accent-mid:rgba(0,232,122,0.15);
+  --blue:#3b82f6;--blue-dim:rgba(59,130,246,0.1);
+  --warn:#f59e0b;--warn-dim:rgba(245,158,11,0.1);
+  --red:#ef4444;--red-dim:rgba(239,68,68,0.1);
+  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.1);
+  --text:#e4e4ed;--text2:#b0b0c4;--muted:#6b6b85;
+  --radius:10px;--radius-lg:14px;
 }
-body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overflow-x:hidden; }
-body::before {
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background-image: linear-gradient(rgba(0,255,135,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,255,135,0.03) 1px,transparent 1px);
-  background-size:40px 40px;
+html{font-size:15px;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ═══ GRID BACKGROUND ═══ */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,232,122,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,232,122,0.018) 1px,transparent 1px);
+  background-size:48px 48px;}
+
+/* ═══ LOGIN ═══ */
+#login-screen{position:fixed;inset:0;z-index:500;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px;}
+#login-screen.active{display:flex;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:56px 44px;max-width:400px;width:100%;text-align:center;}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:56px;letter-spacing:8px;color:var(--accent);text-shadow:0 0 40px rgba(0,232,122,0.4);margin-bottom:4px;}
+.login-sub{font-size:12px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.login-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:32px;}
+.login-line{width:32px;height:2px;background:var(--accent);opacity:0.3;margin:0 auto 28px;}
+.g-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:#fff;color:#1a1a1a;border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 2px 16px rgba(0,0,0,0.4);}
+.g-btn:hover{background:#f0f0f0;transform:translateY(-1px);}
+.g-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.g-btn svg{width:20px;height:20px;flex-shrink:0;}
+.login-note{font-size:11px;color:var(--muted);margin-top:20px;line-height:1.7;}
+
+/* ═══ APP SHELL ═══ */
+#app{display:none;min-height:100vh;min-height:100dvh;}
+#app.active{display:flex;flex-direction:column;}
+
+/* ═══ HEADER ═══ */
+header{position:sticky;top:0;z-index:100;background:rgba(8,9,13,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:4px;color:var(--accent);text-shadow:0 0 20px rgba(0,232,122,0.3);cursor:pointer;}
+.logo span{color:var(--muted);font-size:20px;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.user-chip{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--muted);}
+.user-av{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--accent);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--accent);overflow:hidden;}
+.user-av img{width:100%;height:100%;border-radius:50%;}
+.hdr-btn{background:none;border:1.5px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;letter-spacing:0.8px;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.hdr-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.hdr-btn.warn{border-color:#3a2525;color:var(--red);}
+.hdr-btn.warn:hover{border-color:var(--red);background:var(--red-dim);}
+
+/* ═══ NAV TABS ═══ */
+.nav-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface);padding:0 20px;flex-shrink:0;}
+.nav-tab{padding:12px 18px;font-size:12px;font-weight:600;letter-spacing:0.8px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;position:relative;}
+.nav-tab:hover{color:var(--text2);}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.nav-tab .badge{position:absolute;top:6px;right:4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center;}
+
+/* ═══ MAIN CONTENT ═══ */
+.main-content{flex:1;overflow-y:auto;padding:20px;max-width:900px;width:100%;margin:0 auto;}
+
+/* ═══ DASHBOARD VIEW ═══ */
+.dash-section{margin-bottom:28px;}
+.dash-section-title{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.dash-section-title .verdict-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.dash-section-title h3{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.dash-section-title .count{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+
+.stock-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:all .15s;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;}
+.stock-card:hover{border-color:var(--border2);transform:translateX(2px);background:var(--surface2);}
+.stock-card.overdue{border-left:3px solid var(--red);}
+.stock-card.due-soon{border-left:3px solid var(--warn);}
+.sc-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sc-ticker{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--accent);letter-spacing:1px;}
+.sc-name{font-size:12px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sc-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.tag{font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:8px;text-transform:uppercase;white-space:nowrap;}
+.tag.buy{background:rgba(0,232,122,0.12);color:var(--accent);}
+.tag.wait-price{background:var(--warn-dim);color:var(--warn);}
+.tag.wait-fund{background:rgba(255,165,0,0.1);color:#ffa500;}
+.tag.avoid{background:var(--red-dim);color:var(--red);}
+.tag.exited{background:rgba(100,100,120,0.15);color:var(--muted);}
+.tag.sector{background:var(--blue-dim);color:var(--blue);}
+.sc-right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.sc-date{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+.sc-due{font-size:10px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:6px;}
+.sc-due.overdue{color:var(--red);background:var(--red-dim);}
+.sc-due.due-soon{color:var(--warn);background:var(--warn-dim);}
+.sc-due.upcoming{color:var(--blue);background:var(--blue-dim);}
+
+/* ═══ STOCK DETAIL VIEW ═══ */
+#detail-view{display:none;}
+#detail-view.active{display:block;}
+.detail-back{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;margin-bottom:16px;padding:6px 12px;border-radius:6px;transition:all .15s;border:1px solid transparent;}
+.detail-back:hover{color:var(--accent);border-color:var(--border);background:var(--surface);}
+.detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap;}
+.detail-ticker{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;color:var(--accent);}
+.detail-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.detail-btn{padding:8px 16px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);}
+.detail-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.detail-btn.primary{background:var(--accent);color:#000;border-color:var(--accent);}
+.detail-btn.primary:hover{background:#00ff87;box-shadow:0 4px 20px rgba(0,232,122,0.25);}
+
+/* Thesis Render */
+.thesis-container{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:20px;}
+.thesis-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.thesis-header h3{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.thesis-body{padding:20px;font-size:14px;line-height:1.7;color:var(--text2);white-space:pre-wrap;font-family:'DM Sans',sans-serif;max-height:600px;overflow-y:auto;}
+.thesis-body h1,.thesis-body h2,.thesis-body h3{color:var(--accent);font-family:'DM Mono',monospace;margin:20px 0 8px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;}
+.thesis-body table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px;}
+.thesis-body th,.thesis-body td{padding:6px 10px;border:1px solid var(--border);text-align:left;}
+.thesis-body th{background:var(--surface2);color:var(--accent);font-weight:600;font-size:11px;letter-spacing:0.5px;}
+.thesis-body blockquote{border-left:3px solid var(--accent);padding:8px 16px;margin:8px 0;background:var(--accent-dim);border-radius:0 var(--radius) var(--radius) 0;font-style:italic;color:var(--text);}
+.thesis-body code{background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);}
+.thesis-empty{text-align:center;padding:48px 24px;color:var(--muted);}
+.thesis-empty-icon{font-size:36px;margin-bottom:12px;opacity:0.5;}
+
+/* Notes Timeline */
+.notes-timeline{margin-top:0;}
+.timeline-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.timeline-header h3{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.note-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;animation:slideUp .25s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.note-item-header{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.note-type-tag{font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:8px;text-transform:uppercase;}
+.note-type-tag.THESIS{background:var(--accent-dim);color:var(--accent);}
+.note-type-tag.RISK{background:var(--red-dim);color:var(--red);}
+.note-type-tag.TRADE{background:var(--blue-dim);color:var(--blue);}
+.note-type-tag.EARNINGS{background:var(--warn-dim);color:var(--warn);}
+.note-type-tag.WATCHLIST{background:var(--purple-dim);color:var(--purple);}
+.note-type-tag.NEWS{background:rgba(100,200,255,0.1);color:#64c8ff;}
+.note-sentiment{font-size:10px;color:var(--muted);}
+.note-time{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-left:auto;}
+.note-body{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:6px;}
+.note-action{font-size:12px;color:var(--warn);line-height:1.5;padding:6px 10px;background:var(--warn-dim);border-radius:6px;margin-top:6px;}
+
+/* ═══ MODALS ═══ */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.active{display:flex;}
+@media(min-width:640px){.modal-overlay.active{align-items:center;}}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:90vh;max-height:90dvh;overflow-y:auto;animation:slideModal .25s ease;}
+@media(min-width:640px){.modal{border-radius:var(--radius-lg);}}
+@keyframes slideModal{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1;border-radius:20px 20px 0 0;}
+@media(min-width:640px){.modal-header{border-radius:var(--radius-lg) var(--radius-lg) 0 0;}}
+.modal-header h2{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--text);}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s;}
+.modal-close:hover{color:var(--text);background:var(--surface2);}
+.modal-body{padding:20px;}
+
+/* ═══ FORM ELEMENTS ═══ */
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.form-group label .req{color:var(--warn);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:480px){.form-row{grid-template-columns:1fr;}}
+
+input[type="text"],input[type="date"],select,textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;outline:none;transition:border-color .2s;
 }
+input[type="date"]{color-scheme:dark;cursor:pointer;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,232,122,0.06);}
+input.error,textarea.error,select.error{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(239,68,68,0.08)!important;}
+textarea{resize:vertical;line-height:1.6;}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b85' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer;}
+.field-error{font-size:11px;color:var(--red);margin-top:4px;display:none;}
+.field-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.ticker-input{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--accent);background:rgba(0,232,122,0.04);border-color:rgba(0,232,122,0.15);}
 
-/* ══ LOGIN ══ */
-#login-screen { position:fixed; inset:0; z-index:500; background:var(--bg); display:none; align-items:center; justify-content:center; overflow-y:auto; padding:24px; }
-#login-screen.active { display:flex; }
-.login-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:48px 40px; max-width:420px; width:100%; text-align:center; margin:auto; }
-.login-logo { font-family:'Bebas Neue',sans-serif; font-size:52px; letter-spacing:6px; color:var(--accent); text-shadow:0 0 30px rgba(0,255,135,0.5); margin-bottom:6px; }
-.login-tagline { font-size:13px; color:var(--muted); letter-spacing:0.5px; margin-bottom:12px; }
-.login-divider { width:40px; height:2px; background:var(--accent); opacity:0.4; margin:0 auto 32px; }
-.google-btn { width:100%; display:flex; align-items:center; justify-content:center; gap:12px; padding:14px 20px; background:#fff; color:#1a1a1a; border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 12px rgba(0,0,0,0.3); }
-.google-btn:hover { background:#f0f0f0; transform:translateY(-1px); }
-.google-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-.google-icon { width:20px; height:20px; flex-shrink:0; }
-.login-note { font-size:11px; color:var(--muted); margin-top:20px; line-height:1.6; }
+.voice-hint{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:16px;padding:8px 12px;background:var(--blue-dim);border:1px solid rgba(59,130,246,0.15);border-radius:8px;}
+.voice-dot{width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
-/* ══ APP ══ */
-#app-screen { display:none; }
-#app-screen.active { display:block; }
+.submit-btn{width:100%;padding:13px;background:var(--accent);color:#000;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.5px;cursor:pointer;transition:all .2s;}
+.submit-btn:hover{background:#00ff87;transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,232,122,0.3);}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
 
-/* ══ HEADER ══ */
-header { position:sticky; top:0; z-index:100; background:rgba(10,10,15,0.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding:0 24px; height:60px; display:flex; align-items:center; justify-content:space-between; }
-.logo { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:3px; color:var(--accent); text-shadow:0 0 20px rgba(0,255,135,0.4); }
-.logo span { color:var(--muted); }
-.header-right { display:flex; align-items:center; gap:10px; }
-.user-chip { display:flex; align-items:center; gap:8px; padding:5px 12px 5px 5px; background:var(--surface2); border:1px solid var(--border); border-radius:20px; font-size:12px; color:var(--muted); }
-.user-avatar { width:26px; height:26px; border-radius:50%; border:1.5px solid var(--accent); background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:var(--accent); overflow:hidden; }
-.user-avatar img { width:100%; height:100%; border-radius:50%; }
-.btn-new-note { background:none; border:1.5px solid var(--accent); color:var(--accent); padding:7px 14px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; letter-spacing:1px; transition:all 0.2s; }
-.btn-new-note:hover { background:rgba(0,255,135,0.1); }
-.btn-signout { background:none; border:1.5px solid #3a2a2a; color:var(--warn); padding:7px 14px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; letter-spacing:1px; transition:all 0.2s; }
-.btn-signout:hover { background:rgba(255,107,53,0.1); border-color:var(--warn); }
+/* ═══ PASTE THESIS MODAL ═══ */
+#paste-thesis-area{min-height:200px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.6;}
 
-/* ══ LAYOUT ══ */
-main { position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:32px 24px; display:grid; grid-template-columns:1fr 360px; gap:24px; }
-@media(max-width:768px){ main{ grid-template-columns:1fr; padding:16px; } }
+/* ═══ EMPTY STATES ═══ */
+.empty-state{text-align:center;padding:56px 24px;color:var(--muted);}
+.empty-icon{font-size:40px;margin-bottom:14px;opacity:0.4;}
+.empty-text{font-size:13px;line-height:1.7;}
+.empty-text strong{color:var(--text2);}
 
-/* ══ PANELS ══ */
-.panel { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
-.panel-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
-.panel-title { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
-.panel-body { padding:20px; }
+/* ═══ SEARCH ═══ */
+.search-bar{margin-bottom:20px;position:relative;}
+.search-bar input{padding-left:36px;background:var(--surface);font-size:13px;}
+.search-bar::before{content:'⌕';position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;}
 
-/* ══ FORM ══ */
-.form-row { margin-bottom:16px; }
-.form-row label { display:block; font-size:11px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
-.field-required::after { content:' *'; color:var(--warn); }
+/* ═══ TOAST ═══ */
+#toast{position:fixed;bottom:20px;right:20px;left:20px;z-index:999;padding:12px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(0.34,1.56,0.64,1);text-align:center;pointer-events:none;}
+@media(min-width:640px){#toast{left:auto;max-width:360px;}}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast.success{background:#0d2a18;border:1px solid var(--accent);color:var(--accent);}
+#toast.error{background:#2a0d0d;border:1px solid var(--red);color:var(--red);}
+#toast.info{background:#0d162a;border:1px solid var(--blue);color:var(--blue);}
 
-input[type="text"], input[type="date"], select, textarea {
-  width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px;
-  color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; padding:10px 14px; outline:none; transition:border-color 0.2s;
+.spinner{width:16px;height:16px;border:2px solid rgba(0,232,122,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══ DATE BADGE ═══ */
+.date-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-family:'DM Mono',monospace;}
+.date-badge.overdue{background:var(--red-dim);color:var(--red);}
+.date-badge.due-soon{background:var(--warn-dim);color:var(--warn);}
+.date-badge.upcoming{background:var(--blue-dim);color:var(--blue);}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:640px){
+  html{font-size:14px;}
+  header{padding:0 14px;}
+  .main-content{padding:14px;}
+  .detail-ticker{font-size:28px;}
+  .modal-body{padding:16px;}
+  .hdr-btn{padding:5px 10px;font-size:10px;}
+  .user-chip span{display:none;}
 }
-input[type="date"] { color-scheme:dark; cursor:pointer; }
-input:focus, select:focus, textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,255,135,0.08); }
-input.error, textarea.error { border-color:var(--warn) !important; box-shadow:0 0 0 3px rgba(255,107,53,0.1) !important; }
-
-#ticker-field { font-family:'DM Mono',monospace; font-size:18px; font-weight:500; letter-spacing:2px; text-transform:uppercase; color:var(--accent); background:var(--ticker-bg); border-color:var(--ticker-border); max-width:160px; }
-#note-body { min-height:140px; resize:vertical; line-height:1.6; font-size:15px; }
-#action-items-field { min-height:70px; resize:vertical; line-height:1.6; }
-
-.meta-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
-select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b80' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; cursor:pointer; }
-
-/* ── date row ── */
-.date-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
-.date-badge { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:12px; font-size:11px; font-family:'DM Mono',monospace; margin-top:4px; }
-.date-badge.overdue { background:rgba(255,67,67,0.12); color:#ff4343; border:1px solid rgba(255,67,67,0.2); }
-.date-badge.due-soon { background:rgba(255,107,53,0.12); color:var(--warn); border:1px solid rgba(255,107,53,0.2); }
-.date-badge.upcoming { background:rgba(0,150,255,0.1); color:var(--accent2); border:1px solid rgba(0,150,255,0.2); }
-
-.voice-hint { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-bottom:16px; padding:8px 12px; background:rgba(0,150,255,0.06); border:1px solid rgba(0,150,255,0.15); border-radius:6px; }
-.voice-dot { width:8px; height:8px; border-radius:50%; background:var(--accent2); flex-shrink:0; animation:pulse 2s infinite; }
-@keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-/* ── field hint ── */
-.field-hint { font-size:11px; color:var(--muted); margin-top:4px; }
-.field-error { font-size:11px; color:var(--warn); margin-top:4px; display:none; }
-
-/* ══ BUTTONS ══ */
-#save-btn { width:100%; padding:13px; background:var(--accent); color:#000; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; letter-spacing:0.5px; cursor:pointer; transition:all 0.2s; }
-#save-btn:hover { background:#00e87a; transform:translateY(-1px); box-shadow:0 4px 20px rgba(0,255,135,0.3); }
-#save-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
-.folder-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:rgba(0,150,255,0.08); border:1px solid rgba(0,150,255,0.2); border-radius:20px; font-size:11px; color:var(--accent2); font-family:'DM Mono',monospace; }
-
-/* ══ NOTES LIST ══ */
-.filter-bar { padding:12px 20px; border-bottom:1px solid var(--border); display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
-.filter-bar::-webkit-scrollbar { display:none; }
-.filter-chip { flex-shrink:0; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:500; letter-spacing:0.5px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; transition:all 0.15s; }
-.filter-chip:hover,.filter-chip.active { border-color:var(--accent); color:var(--accent); background:rgba(0,255,135,0.05); }
-.search-wrap { padding:12px 20px; border-bottom:1px solid var(--border); }
-.note-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:10px; transition:border-color 0.2s,transform 0.15s; animation:slideIn 0.3s ease; }
-@keyframes slideIn{ from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
-.note-card:hover { border-color:#3a3a4a; transform:translateX(-2px); }
-.note-card.overdue-card { border-left:3px solid #ff4343; }
-.note-card.due-soon-card { border-left:3px solid var(--warn); }
-.note-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-.note-ticker { font-family:'DM Mono',monospace; font-size:16px; font-weight:500; color:var(--accent); letter-spacing:1px; }
-.note-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.note-tag { font-size:10px; font-weight:600; letter-spacing:1px; padding:2px 8px; border-radius:10px; text-transform:uppercase; }
-.note-tag.THESIS { background:rgba(0,255,135,0.1); color:#00ff87; }
-.note-tag.RISK { background:rgba(255,107,53,0.1); color:#ff6b35; }
-.note-tag.TRADE { background:rgba(0,150,255,0.1); color:#0096ff; }
-.note-tag.EARNINGS { background:rgba(255,214,10,0.1); color:#ffd60a; }
-.note-tag.WATCHLIST { background:rgba(191,90,242,0.1); color:#bf5af2; }
-.note-time { font-size:11px; color:var(--muted); font-family:'DM Mono',monospace; }
-.note-bywhen { font-size:11px; font-family:'DM Mono',monospace; padding:1px 6px; border-radius:6px; }
-.note-bywhen.overdue { color:#ff4343; background:rgba(255,67,67,0.1); }
-.note-bywhen.due-soon { color:var(--warn); background:rgba(255,107,53,0.1); }
-.note-bywhen.upcoming { color:var(--accent2); background:rgba(0,150,255,0.08); }
-.note-action { font-size:12px; color:#b0b0c0; margin-top:6px; line-height:1.4; }
-
-.empty-state { text-align:center; padding:48px 20px; color:var(--muted); }
-.empty-icon { font-size:40px; margin-bottom:12px; opacity:0.5; }
-.empty-text { font-size:13px; line-height:1.6; }
-
-/* ══ TOAST ══ */
-#toast { position:fixed; bottom:24px; right:24px; z-index:999; padding:12px 20px; border-radius:8px; font-size:13px; font-weight:500; transform:translateY(80px); opacity:0; transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); max-width:320px; }
-#toast.show { transform:translateY(0); opacity:1; }
-#toast.success { background:#0d2a1a; border:1px solid var(--accent); color:var(--accent); }
-#toast.error { background:#2a0d0d; border:1px solid #ff4444; color:#ff4444; }
-#toast.info { background:#0d1a2a; border:1px solid var(--accent2); color:var(--accent2); }
-.spinner { width:18px; height:18px; border:2px solid rgba(0,255,135,0.2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; display:inline-block; vertical-align:middle; }
-@keyframes spin { to{transform:rotate(360deg)} }
-::-webkit-scrollbar { width:4px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 </style>
 </head>
 <body>
 
-<!-- ══ LOGIN SCREEN ══ -->
+<!-- ═══ LOGIN SCREEN ═══ -->
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">StockNotes</div>
-    <div class="login-tagline">Market Intelligence · Google Drive · Cross-Platform</div>
-    <div class="login-divider"></div>
-    <button class="google-btn" id="google-signin-btn" onclick="startSignIn()">
-      <svg class="google-icon" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
-      <span id="signin-btn-text">Sign in with Google</span>
+    <div class="login-sub">Equity Research System</div>
+    <div class="login-line"></div>
+    <div class="login-desc">Thesis management + quick capture.<br>Powered by Google Drive. Works with Claude.</div>
+    <button class="g-btn" id="g-signin-btn" onclick="startSignIn()">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      <span id="signin-text">Sign in with Google</span>
     </button>
-    <p class="login-note">Your notes are saved as .docx files in your Google Drive.<br>Only you can access your data.</p>
+    <p class="login-note">Notes saved as Google Docs in your Drive.<br>One thesis doc per stock + quick notes. Only you can access.</p>
   </div>
 </div>
 
-<!-- ══ APP SCREEN ══ -->
-<div id="app-screen">
+<!-- ═══ APP ═══ -->
+<div id="app">
   <header>
-    <div class="logo">Stock<span>Notes</span></div>
-    <div class="header-right">
+    <div class="logo" onclick="showDashboard()">Stock<span>Notes</span></div>
+    <div class="hdr-right">
       <div class="user-chip">
-        <div class="user-avatar" id="user-avatar-el">?</div>
-        <span id="user-email-display">—</span>
+        <div class="user-av" id="user-av">?</div>
+        <span id="user-email">—</span>
       </div>
-      <button class="btn-new-note" onclick="newNote()">✚ NEW NOTE</button>
-      <button class="btn-signout" onclick="doSignOut()">⏻ SIGN OUT</button>
+      <button class="hdr-btn" onclick="openQuickNote()">✚ NOTE</button>
+      <button class="hdr-btn" onclick="openPasteThesis()">📋 THESIS</button>
+      <button class="hdr-btn warn" onclick="doSignOut()">⏻</button>
     </div>
   </header>
 
-  <main>
-    <!-- LEFT: NOTE ENTRY -->
-    <div>
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">📝 New Note</span>
-          <span class="folder-pill" id="folder-display">📁 StockNotes</span>
-        </div>
-        <div class="panel-body">
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard',this)">Dashboard</div>
+    <div class="nav-tab" data-tab="all-notes" onclick="switchTab('all-notes',this)">All Notes</div>
+  </div>
 
-          <div class="voice-hint">
-            <div class="voice-dot"></div>
-            <span>WisprFlow ready — click any text field and dictate. Works on Android, iOS &amp; Windows.</span>
-          </div>
+  <!-- DASHBOARD VIEW -->
+  <div class="main-content" id="dashboard-view">
+    <div class="search-bar">
+      <input type="text" id="dash-search" placeholder="Search ticker or keyword…" oninput="renderDashboard()">
+    </div>
+    <div id="dash-content">
+      <div class="empty-state">
+        <div class="empty-icon">📡</div>
+        <div class="empty-text">Sign in to load your stocks</div>
+      </div>
+    </div>
+  </div>
 
-          <!-- ROW 1: Ticker + Price -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-            <div class="form-row" style="margin:0;">
-              <label class="field-required">Ticker Symbol</label>
-              <input type="text" id="ticker-field" placeholder="RELIANCE" maxlength="20" />
-              <div class="field-error" id="err-ticker">Please enter a ticker symbol</div>
-            </div>
-            <div class="form-row" style="margin:0;">
-              <label>Price at Note (₹/$)</label>
-              <input type="text" id="price-field" placeholder="e.g. 2450.50"
-                style="font-family:'DM Mono',monospace;"
-                inputmode="decimal"
-                oninput="this.value=this.value.replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1')" />
-            </div>
-          </div>
+  <!-- ALL NOTES VIEW -->
+  <div class="main-content" id="all-notes-view" style="display:none;">
+    <div class="search-bar">
+      <input type="text" id="notes-search" placeholder="Search notes…" oninput="renderAllNotes()">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;" id="note-filters">
+      <button class="tag buy" style="cursor:pointer;border:none;font-family:'DM Sans',sans-serif;padding:4px 12px;font-size:11px;" onclick="setNoteFilter('ALL',this)">ALL</button>
+      <button class="tag" style="cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;padding:4px 12px;font-size:11px;" onclick="setNoteFilter('THESIS',this)">THESIS</button>
+      <button class="tag" style="cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;padding:4px 12px;font-size:11px;" onclick="setNoteFilter('TRADE',this)">TRADE</button>
+      <button class="tag" style="cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;padding:4px 12px;font-size:11px;" onclick="setNoteFilter('RISK',this)">RISK</button>
+      <button class="tag" style="cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;padding:4px 12px;font-size:11px;" onclick="setNoteFilter('EARNINGS',this)">EARNINGS</button>
+      <button class="tag" style="cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;padding:4px 12px;font-size:11px;" onclick="setNoteFilter('WATCHLIST',this)">WATCHLIST</button>
+      <button class="tag" style="cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;padding:4px 12px;font-size:11px;" onclick="setNoteFilter('NEWS',this)">NEWS</button>
+    </div>
+    <div id="all-notes-content"></div>
+  </div>
 
-          <!-- ROW 2: Note Type + Sentiment -->
-          <div class="meta-row">
-            <div class="form-row" style="margin:0;">
-              <label>Note Type</label>
-              <select id="note-type">
-                <option value="THESIS">📐 Thesis</option>
-                <option value="TRADE">📈 Trade</option>
-                <option value="RISK">⚠️ Risk</option>
-                <option value="EARNINGS">📊 Earnings</option>
-                <option value="WATCHLIST">👁 Watchlist</option>
-              </select>
-            </div>
-            <div class="form-row" style="margin:0;">
-              <label>Sentiment</label>
-              <select id="note-sentiment">
-                <option value="BULLISH">🟢 Bullish</option>
-                <option value="BEARISH">🔴 Bearish</option>
-                <option value="NEUTRAL">🟡 Neutral</option>
-                <option value="WATCHING">👀 Watching</option>
-              </select>
-            </div>
-          </div>
+  <!-- STOCK DETAIL VIEW -->
+  <div class="main-content" id="detail-view">
+    <div class="detail-back" onclick="showDashboard()">← Back to Dashboard</div>
+    <div class="detail-header">
+      <div>
+        <div class="detail-ticker" id="detail-ticker">—</div>
+        <div class="sc-tags" id="detail-tags" style="margin-top:4px;"></div>
+      </div>
+      <div class="detail-actions">
+        <button class="detail-btn" onclick="openQuickNoteFor()">✚ Quick Note</button>
+        <button class="detail-btn primary" onclick="openPasteThesisFor()">📋 Update Thesis</button>
+      </div>
+    </div>
 
-          <!-- ROW 3: Note Body -->
-          <div class="form-row">
-            <label class="field-required">Note / Voice Dictation</label>
-            <textarea id="note-body"
-              placeholder="Click here and use WisprFlow to dictate, or type manually...
-
-Example: HDFC Bank looks strong above 1650. Volume pickup on daily chart. Key resistance at 1720. Planning to add on dip to 1640 with stop at 1600."></textarea>
-            <div class="field-error" id="err-body">Please enter a note</div>
-          </div>
-
-          <!-- ROW 4: Action Items (mandatory) + By When (mandatory) -->
-          <div class="date-row">
-            <div class="form-row" style="margin:0;">
-              <label class="field-required">Action Items</label>
-              <textarea id="action-items-field" rows="3"
-                placeholder="What needs to be done? e.g. Buy 100 shares on dip to 2400, set stop at 2300"></textarea>
-              <div class="field-error" id="err-action">Action items are required</div>
-              <div class="field-hint">Be specific — this feeds the daily email digest</div>
-            </div>
-            <div class="form-row" style="margin:0;">
-              <label class="field-required">Revisit By</label>
-              <input type="date" id="bywhen-field" />
-              <div class="field-error" id="err-bywhen">Please set a revisit date</div>
-              <div id="date-badge-wrap" style="margin-top:6px;"></div>
-            </div>
-          </div>
-
-          <button id="save-btn" onclick="saveNote()">
-            <span id="save-btn-text">💾 SAVE TO GOOGLE DRIVE</span>
-          </button>
-
+    <!-- Thesis Section -->
+    <div class="thesis-container">
+      <div class="thesis-header">
+        <h3>📐 Thesis Document</h3>
+        <span class="sc-date" id="thesis-updated"></span>
+      </div>
+      <div class="thesis-body" id="thesis-content">
+        <div class="thesis-empty">
+          <div class="thesis-empty-icon">📐</div>
+          <div>No thesis yet. Paste your Claude output to create one.</div>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT: RECENT NOTES -->
-    <div>
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">📋 Recent Notes</span>
-          <button onclick="loadNotes()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;">↻ Refresh</button>
+    <!-- Notes for this stock -->
+    <div class="notes-timeline">
+      <div class="timeline-header">
+        <h3>📋 Notes & Updates</h3>
+      </div>
+      <div id="detail-notes"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ QUICK NOTE MODAL ═══ -->
+<div class="modal-overlay" id="quick-note-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>✚ Quick Note</h2>
+      <button class="modal-close" onclick="closeModal('quick-note-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="voice-hint">
+        <div class="voice-dot"></div>
+        <span>WisprFlow ready — click any field and dictate</span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ticker <span class="req">*</span></label>
+          <input type="text" id="qn-ticker" class="ticker-input" placeholder="RELIANCE" maxlength="20">
+          <div class="field-error" id="qn-err-ticker">Required</div>
         </div>
-        <div class="search-wrap">
-          <input type="text" id="search-input" placeholder="Search ticker or keyword…" oninput="filterNotes()" />
-        </div>
-        <div class="filter-bar">
-          <button class="filter-chip active" onclick="setFilter('ALL',this)">All</button>
-          <button class="filter-chip" onclick="setFilter('THESIS',this)">Thesis</button>
-          <button class="filter-chip" onclick="setFilter('TRADE',this)">Trade</button>
-          <button class="filter-chip" onclick="setFilter('RISK',this)">Risk</button>
-          <button class="filter-chip" onclick="setFilter('EARNINGS',this)">Earnings</button>
-          <button class="filter-chip" onclick="setFilter('WATCHLIST',this)">Watchlist</button>
-        </div>
-        <div class="panel-body" id="notes-container" style="max-height:640px;overflow-y:auto;padding:12px;">
-          <div class="empty-state">
-            <div class="empty-icon">📡</div>
-            <div class="empty-text">Notes load after sign-in</div>
-          </div>
+        <div class="form-group">
+          <label>Price (₹/$)</label>
+          <input type="text" id="qn-price" placeholder="2450.50" inputmode="decimal" style="font-family:'DM Mono',monospace;" oninput="this.value=this.value.replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1')">
         </div>
       </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type</label>
+          <select id="qn-type">
+            <option value="NEWS">📰 News</option>
+            <option value="TRADE">📈 Trade</option>
+            <option value="RISK">⚠️ Risk</option>
+            <option value="EARNINGS">📊 Earnings</option>
+            <option value="WATCHLIST">👁 Watchlist</option>
+            <option value="THESIS">📐 Thesis</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sentiment</label>
+          <select id="qn-sentiment">
+            <option value="BULLISH">🟢 Bullish</option>
+            <option value="BEARISH">🔴 Bearish</option>
+            <option value="NEUTRAL">🟡 Neutral</option>
+            <option value="WATCHING">👀 Watching</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Note <span class="req">*</span></label>
+        <textarea id="qn-body" rows="4" placeholder="Click here and dictate, or type…"></textarea>
+        <div class="field-error" id="qn-err-body">Required</div>
+      </div>
+
+      <div class="form-group">
+        <label>Action Items</label>
+        <textarea id="qn-actions" rows="2" placeholder="e.g. Set alert at ₹2400, review after Q4 results"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Revisit By</label>
+        <input type="date" id="qn-bywhen">
+        <div id="qn-date-badge" style="margin-top:4px;"></div>
+      </div>
+
+      <button class="submit-btn" id="qn-save-btn" onclick="saveQuickNote()">
+        <span id="qn-save-text">💾 Save Note</span>
+      </button>
     </div>
-  </main>
+  </div>
+</div>
+
+<!-- ═══ PASTE THESIS MODAL ═══ -->
+<div class="modal-overlay" id="paste-thesis-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📋 Paste Claude Thesis</h2>
+      <button class="modal-close" onclick="closeModal('paste-thesis-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Ticker <span class="req">*</span></label>
+        <input type="text" id="pt-ticker" class="ticker-input" placeholder="RELIANCE" maxlength="20">
+        <div class="field-error" id="pt-err-ticker">Required</div>
+      </div>
+
+      <div class="form-group">
+        <label>Paste full thesis from Claude <span class="req">*</span></label>
+        <textarea id="paste-thesis-area" rows="12" placeholder="Paste the entire thesis output from your Claude conversation here…
+
+The app will save this as the master thesis document for this ticker. Any existing thesis will be replaced."></textarea>
+        <div class="field-error" id="pt-err-body">Required</div>
+        <div class="field-hint">This replaces the existing thesis doc for this ticker in Google Drive</div>
+      </div>
+
+      <button class="submit-btn" id="pt-save-btn" onclick="saveThesis()">
+        <span id="pt-save-text">📐 Save Thesis to Drive</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -307,374 +448,666 @@ Example: HDFC Bank looks strong above 1650. Volume pickup on daily chart. Key re
 <script>
 'use strict';
 
-// ══ CONFIG ══
+// ═══ CONFIG ═══
 const CLIENT_ID   = '423488104709-c2cjqlshgqds5pjrrbbn4rlmn6qjsl64.apps.googleusercontent.com';
 const FOLDER_NAME = 'StockNotes';
 const SCOPES      = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/userinfo.email';
 
-// ══ STATE ══
-let accessToken = null, tokenExpiry = 0, driveFolderId = null;
-let tokenClient = null, allNotes = [], activeFilter = 'ALL';
-let userEmail = '', gsiReady = false;
+// Naming convention:
+// Thesis docs:  TICKER_THESIS          (e.g. RELIANCE_THESIS)
+// Quick notes:  TICKER_NOTE_YYYYMMDDTHHmmss_TYPE_BYWHEN  (e.g. RELIANCE_NOTE_20260312T1430_TRADE_20260320)
 
-// ══ SCREENS ══
-function showLoginScreen() {
+// ═══ STATE ═══
+let accessToken = null, tokenExpiry = 0, folderId = null;
+let tokenClient = null, gsiReady = false;
+let allDocs = [];       // raw Drive file list
+let stocksMap = {};     // ticker -> {thesis: {...}, notes: [...]}
+let currentTicker = null;
+let activeNoteFilter = 'ALL';
+
+// ═══ SCREENS ═══
+function showLogin() {
   document.getElementById('login-screen').classList.add('active');
-  document.getElementById('app-screen').classList.remove('active');
-  document.getElementById('signin-btn-text').textContent = 'Sign in with Google';
-  document.getElementById('google-signin-btn').disabled = false;
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('signin-text').textContent = 'Sign in with Google';
+  document.getElementById('g-signin-btn').disabled = false;
 }
-function showAppScreen() {
+function showApp() {
   document.getElementById('login-screen').classList.remove('active');
-  document.getElementById('app-screen').classList.add('active');
+  document.getElementById('app').classList.add('active');
 }
 
-// ══ INIT ══
+// ═══ INIT ═══
 window.addEventListener('load', function() {
-  accessToken = null; tokenExpiry = 0; driveFolderId = null;
-  showLoginScreen();
+  accessToken = null; tokenExpiry = 0; folderId = null;
+  showLogin();
   setMinDate();
-  waitForGSI();
+  waitGSI();
 });
 
 function setMinDate() {
-  // Prevent selecting past dates for "by when"
-  var today = new Date().toISOString().split('T')[0];
-  document.getElementById('bywhen-field').min = today;
+  var d = new Date().toISOString().split('T')[0];
+  var el = document.getElementById('qn-bywhen');
+  if (el) el.min = d;
 }
 
-function waitForGSI() {
+function waitGSI() {
   if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
-    gsiReady = true; initTokenClient();
-  } else { setTimeout(waitForGSI, 300); }
+    gsiReady = true; initToken();
+  } else setTimeout(waitGSI, 300);
 }
-function initTokenClient() {
+function initToken() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID, scope: SCOPES,
-    callback: onTokenReceived, prompt: 'select_account'
+    callback: onToken, prompt: 'select_account'
   });
 }
 
-// ══ SIGN IN ══
+// ═══ AUTH ═══
 function startSignIn() {
-  if (!gsiReady) { showToast('Loading Google Sign-In, please wait…','info'); return; }
-  document.getElementById('signin-btn-text').textContent = 'Signing in…';
-  document.getElementById('google-signin-btn').disabled = true;
+  if (!gsiReady) { toast('Loading Google Sign-In…','info'); return; }
+  document.getElementById('signin-text').textContent = 'Signing in…';
+  document.getElementById('g-signin-btn').disabled = true;
   tokenClient.requestAccessToken();
 }
 
-async function onTokenReceived(response) {
-  if (response.error) {
-    showToast('Sign-in failed: ' + response.error, 'error');
-    showLoginScreen(); return;
-  }
-  accessToken = response.access_token;
-  tokenExpiry  = Date.now() + ((response.expires_in || 3600) * 1000);
-
+async function onToken(res) {
+  if (res.error) { toast('Sign-in failed: '+res.error,'error'); showLogin(); return; }
+  accessToken = res.access_token;
+  tokenExpiry = Date.now() + ((res.expires_in||3600)*1000);
   try {
     var info = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
-      { headers: {'Authorization':'Bearer '+accessToken} }).then(function(r){return r.json();});
-    userEmail = info.email || '';
-    document.getElementById('user-email-display').textContent = userEmail;
-    var el = document.getElementById('user-avatar-el');
-    if (info.picture) { el.innerHTML = '<img src="'+info.picture+'" alt="avatar">'; }
-    else { el.textContent = (info.name||info.email||'?').charAt(0).toUpperCase(); }
-  } catch(e) { document.getElementById('user-email-display').textContent = 'Signed in'; }
-
-  showAppScreen();
-  showToast('✅ Signed in! Connecting to Drive…','success');
-  try { await ensureFolder(); await loadNotes(); } catch(e) { showToast('Drive error: '+e.message,'error'); }
+      {headers:{'Authorization':'Bearer '+accessToken}}).then(r=>r.json());
+    document.getElementById('user-email').textContent = info.email||'';
+    var av = document.getElementById('user-av');
+    if (info.picture) av.innerHTML = '<img src="'+info.picture+'" alt="">';
+    else av.textContent = (info.name||info.email||'?').charAt(0).toUpperCase();
+  } catch(e) { document.getElementById('user-email').textContent = 'Signed in'; }
+  showApp();
+  toast('✅ Signed in — loading Drive…','success');
+  try { await ensureFolder(); await loadAll(); } catch(e) { toast('Drive error: '+e.message,'error'); }
 }
 
-// ══ SIGN OUT ══
 function doSignOut() {
-  if (accessToken) { try { google.accounts.oauth2.revoke(accessToken, function(){}); } catch(e){} }
-  accessToken = null; tokenExpiry = 0; driveFolderId = null; allNotes = []; userEmail = '';
-  resetForm();
-  document.getElementById('notes-container').innerHTML =
-    '<div class="empty-state"><div class="empty-icon">📡</div><div class="empty-text">Notes load after sign-in</div></div>';
-  document.getElementById('user-email-display').textContent = '—';
-  document.getElementById('user-avatar-el').textContent = '?';
-  if (gsiReady) initTokenClient();
-  showLoginScreen();
-  showToast('Signed out successfully','info');
+  if (accessToken) try { google.accounts.oauth2.revoke(accessToken,()=>{}); } catch(e){}
+  accessToken=null; tokenExpiry=0; folderId=null; allDocs=[]; stocksMap={}; currentTicker=null;
+  document.getElementById('user-email').textContent='—';
+  document.getElementById('user-av').textContent='?';
+  if (gsiReady) initToken();
+  showLogin();
+  toast('Signed out','info');
 }
 
-// ══ TOKEN CHECK ══
-function isSignedIn() { return accessToken !== null && Date.now() < tokenExpiry - 60000; }
-function requireSignIn() {
-  if (!isSignedIn()) { showToast('Session expired — please sign in again','info'); doSignOut(); return false; }
+function isAuth() { return accessToken && Date.now() < tokenExpiry - 60000; }
+function requireAuth() {
+  if (!isAuth()) { toast('Session expired — sign in again','info'); doSignOut(); return false; }
   return true;
 }
 
-// ══ DRIVE HELPERS ══
-async function driveRequest(url, options) {
-  if (!requireSignIn()) throw new Error('Not signed in');
-  options = options || {};
-  var res = await fetch(url, {
-    method: options.method || 'GET',
-    headers: Object.assign({'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}, options.headers||{}),
-    body: options.body
+// ═══ DRIVE ═══
+async function driveReq(url, opts) {
+  if (!requireAuth()) throw new Error('Not signed in');
+  opts = opts||{};
+  var r = await fetch(url, {
+    method:opts.method||'GET',
+    headers:Object.assign({'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},opts.headers||{}),
+    body:opts.body
   });
-  if (!res.ok) {
-    var err = await res.json().catch(function(){return{};});
-    throw new Error((err.error&&err.error.message)||('Drive API error '+res.status));
+  if (!r.ok) {
+    var e = await r.json().catch(()=>({}));
+    throw new Error((e.error&&e.error.message)||('API error '+r.status));
   }
-  return res.json();
+  return r.json();
 }
 
 async function ensureFolder() {
   var q = "name='"+FOLDER_NAME+"' and mimeType='application/vnd.google-apps.folder' and trashed=false";
-  var result = await driveRequest('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(q)+'&fields=files(id,name)');
-  if (result.files && result.files.length > 0) {
-    driveFolderId = result.files[0].id;
+  var res = await driveReq('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(q)+'&fields=files(id,name)');
+  if (res.files && res.files.length) {
+    folderId = res.files[0].id;
   } else {
-    var folder = await driveRequest('https://www.googleapis.com/drive/v3/files', {
-      method:'POST', body:JSON.stringify({name:FOLDER_NAME, mimeType:'application/vnd.google-apps.folder'})
+    var f = await driveReq('https://www.googleapis.com/drive/v3/files',{
+      method:'POST',body:JSON.stringify({name:FOLDER_NAME,mimeType:'application/vnd.google-apps.folder'})
     });
-    driveFolderId = folder.id;
-    showToast('Created Drive folder: '+FOLDER_NAME,'success');
+    folderId = f.id;
+    toast('Created folder: '+FOLDER_NAME,'success');
   }
-  document.getElementById('folder-display').textContent = '📁 '+FOLDER_NAME;
 }
 
-// ══ DATE HELPERS ══
-function dateLabel(byWhenStr) {
-  if (!byWhenStr) return null;
-  var today = new Date(); today.setHours(0,0,0,0);
-  var due   = new Date(byWhenStr); due.setHours(0,0,0,0);
-  var diff  = Math.round((due - today) / 86400000);
-  if (diff < 0)  return {label: 'Overdue by '+Math.abs(diff)+'d', cls:'overdue'};
-  if (diff === 0) return {label: 'Due today!', cls:'due-soon'};
-  if (diff <= 7)  return {label: 'Due in '+diff+'d', cls:'due-soon'};
-  return {label: due.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}), cls:'upcoming'};
+// ═══ LOAD ALL DOCS ═══
+async function loadAll() {
+  if (!isAuth()||!folderId) return;
+  var q = "'"+folderId+"' in parents and mimeType='application/vnd.google-apps.document' and trashed=false";
+  var res = await driveReq('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(q)+'&fields=files(id,name,createdTime,modifiedTime)&orderBy=modifiedTime desc&pageSize=500');
+  allDocs = res.files||[];
+  buildStocksMap();
+  renderDashboard();
 }
 
-// Live date badge update as user picks date
-document.addEventListener('DOMContentLoaded', function() {
-  var bw = document.getElementById('bywhen-field');
-  if (bw) {
-    bw.addEventListener('change', function() {
-      var wrap = document.getElementById('date-badge-wrap');
-      var info = dateLabel(this.value);
-      if (info) {
-        wrap.innerHTML = '<span class="date-badge '+info.cls+'">📅 '+info.label+'</span>';
-      } else { wrap.innerHTML = ''; }
-    });
-  }
-});
+function buildStocksMap() {
+  stocksMap = {};
+  allDocs.forEach(function(f) {
+    var parts = f.name.split('_');
+    var ticker = parts[0];
+    if (!ticker) return;
+    if (!stocksMap[ticker]) stocksMap[ticker] = { thesis:null, notes:[], latestDate:null, verdict:null, sector:null };
 
-// ══ VALIDATION ══
-function validateForm() {
-  var valid = true;
-  function check(id, errId, condition) {
-    var el = document.getElementById(id);
-    var err = document.getElementById(errId);
-    if (condition) { el.classList.add('error'); err.style.display='block'; valid=false; }
-    else { el.classList.remove('error'); err.style.display='none'; }
-  }
-  check('ticker-field','err-ticker', !document.getElementById('ticker-field').value.trim());
-  check('note-body','err-body', !document.getElementById('note-body').value.trim());
-  check('action-items-field','err-action', !document.getElementById('action-items-field').value.trim());
-  check('bywhen-field','err-bywhen', !document.getElementById('bywhen-field').value);
-  return valid;
-}
-
-// ══ SAVE NOTE — Google Docs API ══
-// Creates a native Google Doc in Drive.
-// No ZIP, no XML, no blobs — just a plain API call.
-// File name encodes all metadata for the mailer to parse.
-async function saveNote() {
-  if (!requireSignIn()) return;
-  if (!validateForm()) { showToast('Please fill in all required fields','error'); return; }
-  if (!driveFolderId) {
-    showToast('Drive not ready, please wait…','info');
-    try { await ensureFolder(); } catch(e) { showToast('Drive error: '+e.message,'error'); return; }
-  }
-
-  var ticker    = document.getElementById('ticker-field').value.toUpperCase().trim();
-  var price     = document.getElementById('price-field').value.trim();
-  var type      = document.getElementById('note-type').value;
-  var sentiment = document.getElementById('note-sentiment').value;
-  var body      = document.getElementById('note-body').value.trim();
-  var actions   = document.getElementById('action-items-field').value.trim();
-  var byWhen    = document.getElementById('bywhen-field').value; // YYYY-MM-DD
-
-  var btn=document.getElementById('save-btn'), btnText=document.getElementById('save-btn-text');
-  btn.disabled=true; btnText.innerHTML='<span class="spinner"></span> Saving…';
-
-  var timestamp = new Date().toISOString();
-  var noteDt    = timestamp.replace(/[-:T]/g,'').slice(0,15);        // 20260225T103045
-  var byWhenFn  = byWhen.replace(/-/g,'');                           // 20260301
-  // Filename encodes: TICKER_TYPE_NOTEDATE_BYWHEN
-  // e.g. RELIANCE_TRADE_20260225T103045_20260301
-  var docTitle  = ticker+'_'+type+'_'+noteDt+'_'+byWhenFn;
-
-  // Build structured plain text content for the Google Doc
-  var dateStr   = new Date(timestamp).toLocaleString('en-IN',{dateStyle:'full',timeStyle:'short'});
-  var byWhenStr = new Date(byWhen).toLocaleDateString('en-IN',{dateStyle:'long'});
-
-  var docContent = [
-    '═══════════════════════════════════════',
-    '📈 ' + ticker + ' — ' + type,
-    '═══════════════════════════════════════',
-    '',
-    'DATE:       ' + dateStr,
-    'PRICE:      ' + (price || '—'),
-    'SENTIMENT:  ' + sentiment,
-    'TYPE:       ' + type,
-    'REVISIT BY: ' + byWhenStr,
-    '',
-    '───────────────────────────────────────',
-    'NOTE',
-    '───────────────────────────────────────',
-    body,
-    '',
-    '───────────────────────────────────────',
-    'ACTION ITEMS',
-    '───────────────────────────────────────',
-    actions,
-    '',
-    '═══════════════════════════════════════',
-    'Saved via StockNotes · ' + timestamp,
-    '═══════════════════════════════════════'
-  ].join('\n');
-
-  try {
-    // Step 1: Create an empty Google Doc with the right name and parent folder
-    var createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + accessToken,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name:     docTitle,
-        mimeType: 'application/vnd.google-apps.document',
-        parents:  [driveFolderId]
-      })
-    });
-    if (!createRes.ok) throw new Error('Create failed: ' + createRes.status);
-    var created = await createRes.json();
-    var docId = created.id;
-
-    // Step 2: Write the content into the Doc using the Docs API batchUpdate
-    var requests = [{
-      insertText: {
-        location: { index: 1 },
-        text: docContent
-      }
-    }];
-
-    var writeRes = await fetch('https://docs.googleapis.com/v1/documents/' + docId + ':batchUpdate', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + accessToken,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ requests: requests })
-    });
-    if (!writeRes.ok) {
-      var errBody = await writeRes.json().catch(function(){return{};});
-      throw new Error('Write failed: ' + (errBody.error && errBody.error.message || writeRes.status));
+    if (parts[1] === 'THESIS') {
+      stocksMap[ticker].thesis = f;
+      // Try to extract verdict from doc content later; for now use modified time
+      if (!stocksMap[ticker].latestDate || f.modifiedTime > stocksMap[ticker].latestDate)
+        stocksMap[ticker].latestDate = f.modifiedTime;
+    } else if (parts[1] === 'NOTE') {
+      var type = parts[3]||'NOTE';
+      var byWhenRaw = parts[4]||'';
+      var byWhen = byWhenRaw.length===8 ? byWhenRaw.slice(0,4)+'-'+byWhenRaw.slice(4,6)+'-'+byWhenRaw.slice(6,8) : null;
+      stocksMap[ticker].notes.push({
+        ...f, type:type, byWhen:byWhen,
+        noteDate: parts[2]||''
+      });
+      if (!stocksMap[ticker].latestDate || f.createdTime > stocksMap[ticker].latestDate)
+        stocksMap[ticker].latestDate = f.createdTime;
     }
+  });
 
-    showToast('✅ ' + ticker + ' note saved to Google Drive!', 'success');
-    resetForm();
-    await loadNotes();
+  // Sort notes within each stock by created time desc
+  Object.values(stocksMap).forEach(function(s) {
+    s.notes.sort(function(a,b){ return (b.createdTime||'').localeCompare(a.createdTime||''); });
+  });
+}
 
-  } catch(e) {
-    showToast('Save error: ' + e.message, 'error');
-    console.error(e);
-  } finally {
-    btn.disabled=false; btnText.textContent='💾 SAVE TO GOOGLE DRIVE';
+// ═══ DATE HELPERS ═══
+function dateLabel(byWhen) {
+  if (!byWhen) return null;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var due = new Date(byWhen); due.setHours(0,0,0,0);
+  var diff = Math.round((due-today)/86400000);
+  if (diff<0) return {label:'Overdue '+Math.abs(diff)+'d',cls:'overdue'};
+  if (diff===0) return {label:'Due today',cls:'due-soon'};
+  if (diff<=7) return {label:'Due in '+diff+'d',cls:'due-soon'};
+  return {label:due.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}),cls:'upcoming'};
+}
+
+function getEarliestDue(stock) {
+  var earliest = null;
+  stock.notes.forEach(function(n) {
+    if (n.byWhen) {
+      if (!earliest || n.byWhen < earliest) earliest = n.byWhen;
+    }
+  });
+  return earliest;
+}
+
+// ═══ TABS ═══
+function switchTab(tab, el) {
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('dashboard-view').style.display = tab==='dashboard'?'block':'none';
+  document.getElementById('all-notes-view').style.display = tab==='all-notes'?'block':'none';
+  document.getElementById('detail-view').classList.remove('active');
+  if (tab==='all-notes') renderAllNotes();
+  if (tab==='dashboard') renderDashboard();
+}
+
+// ═══ DASHBOARD ═══
+function renderDashboard() {
+  var q = (document.getElementById('dash-search').value||'').toLowerCase();
+  var tickers = Object.keys(stocksMap);
+  if (q) tickers = tickers.filter(t=>t.toLowerCase().includes(q));
+
+  // Sort by latest date desc
+  tickers.sort(function(a,b){
+    return (stocksMap[b].latestDate||'').localeCompare(stocksMap[a].latestDate||'');
+  });
+
+  var container = document.getElementById('dash-content');
+  if (!tickers.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">' +
+      (Object.keys(stocksMap).length ? 'No matches' : 'No stocks yet.<br><strong>Paste a thesis</strong> or <strong>add a quick note</strong> to get started.') +
+      '</div></div>';
+    return;
   }
+
+  var html = '';
+  tickers.forEach(function(ticker) {
+    var s = stocksMap[ticker];
+    var dueStr = getEarliestDue(s);
+    var dueInfo = dateLabel(dueStr);
+    var dueCls = dueInfo ? (dueInfo.cls==='overdue'?'overdue':dueInfo.cls==='due-soon'?'due-soon':'') : '';
+    var hasThesis = s.thesis ? true : false;
+    var noteCount = s.notes.length;
+    var lastDate = s.latestDate ? new Date(s.latestDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) : '';
+
+    html += '<div class="stock-card '+dueCls+'" onclick="openStockDetail(\''+ticker+'\')">';
+    html += '<div><div class="sc-top">';
+    html += '<span class="sc-ticker">'+ticker+'</span>';
+    if (hasThesis) html += '<span class="tag buy" style="font-size:8px;">THESIS</span>';
+    html += '<span style="font-size:11px;color:var(--muted);">'+noteCount+' note'+(noteCount!==1?'s':'')+'</span>';
+    html += '</div></div>';
+    html += '<div class="sc-right">';
+    if (dueInfo) html += '<span class="sc-due '+dueInfo.cls+'">📅 '+dueInfo.label+'</span>';
+    html += '<span class="sc-date">'+lastDate+'</span>';
+    html += '</div>';
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
 }
 
-function resetForm() {
-  ['ticker-field','price-field','note-body','action-items-field','bywhen-field'].forEach(function(id){
-    document.getElementById(id).value='';
-    document.getElementById(id).classList.remove('error');
+// ═══ ALL NOTES VIEW ═══
+function setNoteFilter(f, el) {
+  activeNoteFilter = f;
+  document.querySelectorAll('#note-filters button').forEach(function(b){
+    b.style.border='1px solid var(--border)'; b.style.background='transparent'; b.style.color='var(--muted)';
+    b.className = 'tag';
   });
-  document.getElementById('note-type').value='THESIS';
-  document.getElementById('note-sentiment').value='BULLISH';
-  document.getElementById('date-badge-wrap').innerHTML='';
-  ['err-ticker','err-body','err-action','err-bywhen'].forEach(function(id){
-    document.getElementById(id).style.display='none';
-  });
+  el.className = 'tag buy';
+  el.style.border='none';
+  renderAllNotes();
 }
 
-function newNote() { resetForm(); document.getElementById('ticker-field').focus(); window.scrollTo({top:0,behavior:'smooth'}); }
-
-// ══ LOAD NOTES ══
-async function loadNotes() {
-  if (!isSignedIn()||!driveFolderId) return;
-  var container=document.getElementById('notes-container');
-  container.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);"><span class="spinner"></span><br><br>Loading…</div>';
-  try {
-    var q="'"+driveFolderId+"' in parents and mimeType='application/vnd.google-apps.document' and trashed=false";
-    var res=await driveRequest('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(q)+'&fields=files(id,name,createdTime)&orderBy=createdTime desc&pageSize=100');
-    allNotes=(res.files||[]).map(function(f){
-      // Parse: TICKER_TYPE_NOTEDATE_BYWHEN.docx
-      var p=f.name.split('_');  // Google Doc title: TICKER_TYPE_NOTEDATE_BYWHEN
-      var ticker=p[0]||'?', type=p[1]||'NOTE';
-      // by-when is last segment (YYYYMMDD)
-      var byWhenRaw=p[p.length-1]||'';
-      var byWhen = byWhenRaw.length===8
-        ? byWhenRaw.slice(0,4)+'-'+byWhenRaw.slice(4,6)+'-'+byWhenRaw.slice(6,8)
-        : null;
-      return {ticker,type,filename:f.name,driveId:f.id,createdTime:f.createdTime,byWhen};
+function renderAllNotes() {
+  var q = (document.getElementById('notes-search').value||'').toLowerCase();
+  var all = [];
+  Object.keys(stocksMap).forEach(function(ticker) {
+    stocksMap[ticker].notes.forEach(function(n) {
+      all.push({...n, ticker:ticker});
     });
-    filterNotes();
-  } catch(e) {
-    container.innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">'+e.message+'</div></div>';
-  }
-}
+  });
+  // filter
+  if (activeNoteFilter !== 'ALL') all = all.filter(n=>n.type===activeNoteFilter);
+  if (q) all = all.filter(n=>n.ticker.toLowerCase().includes(q)||n.name.toLowerCase().includes(q));
+  // sort by created desc
+  all.sort((a,b)=>(b.createdTime||'').localeCompare(a.createdTime||''));
 
-function filterNotes() {
-  var q=(document.getElementById('search-input').value||'').toLowerCase();
-  var f=allNotes.slice();
-  if (activeFilter!=='ALL') f=f.filter(function(n){return n.type===activeFilter;});
-  if (q) f=f.filter(function(n){return n.ticker.toLowerCase().includes(q)||n.filename.toLowerCase().includes(q);});
-  renderNotes(f);
-}
+  var c = document.getElementById('all-notes-content');
+  if (!all.length) { c.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No notes found</div></div>'; return; }
 
-function setFilter(filter,el) {
-  activeFilter=filter;
-  document.querySelectorAll('.filter-chip').forEach(function(c){c.classList.remove('active');});
-  el.classList.add('active'); filterNotes();
-}
-
-function renderNotes(notes) {
-  var c=document.getElementById('notes-container');
-  if (!notes.length) { c.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No notes found</div></div>'; return; }
-  c.innerHTML=notes.map(function(n){
-    var d=new Date(n.createdTime);
-    var ds=isNaN(d.getTime())?'':d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
-    var ts=isNaN(d.getTime())?'':d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-    var info=n.byWhen?dateLabel(n.byWhen):null;
-    var cardCls=info?(info.cls==='overdue'?'overdue-card':info.cls==='due-soon'?'due-soon-card':''):'';
-    var byWhenHtml=info?'<span class="note-bywhen '+info.cls+'">📅 '+info.label+'</span>':'';
-    return '<div class="note-card '+cardCls+'">'+
-      '<div class="note-card-header">'+
-      '<span class="note-ticker">'+n.ticker+'</span>'+
-      '<span class="note-meta">'+
-      '<span class="note-tag '+n.type+'">'+n.type+'</span>'+
-      byWhenHtml+
+  c.innerHTML = all.map(function(n) {
+    var d = new Date(n.createdTime);
+    var ds = isNaN(d)?'':d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    var ts = isNaN(d)?'':d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    var dueInfo = n.byWhen ? dateLabel(n.byWhen) : null;
+    var dueCls = dueInfo?(dueInfo.cls==='overdue'?'overdue':dueInfo.cls==='due-soon'?'due-soon':''):'';
+    return '<div class="note-item '+dueCls+'" style="cursor:pointer;" onclick="openStockDetail(\''+n.ticker+'\')">'+
+      '<div class="note-item-header">'+
+      '<span class="sc-ticker" style="font-size:14px;">'+n.ticker+'</span>'+
+      '<span class="note-type-tag '+n.type+'">'+n.type+'</span>'+
+      (dueInfo?'<span class="date-badge '+dueInfo.cls+'">📅 '+dueInfo.label+'</span>':'')+
       '<span class="note-time">'+ds+' '+ts+'</span>'+
-      '</span></div>'+
-      '</div>';
+      '</div></div>';
   }).join('');
 }
 
-// ══ TOAST ══
+// ═══ STOCK DETAIL ═══
+async function openStockDetail(ticker) {
+  currentTicker = ticker;
+  var s = stocksMap[ticker];
+  if (!s) return;
+
+  // Hide other views, show detail
+  document.getElementById('dashboard-view').style.display = 'none';
+  document.getElementById('all-notes-view').style.display = 'none';
+  document.getElementById('detail-view').classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+
+  document.getElementById('detail-ticker').textContent = ticker;
+
+  // Tags
+  var tagsHtml = '';
+  if (s.thesis) tagsHtml += '<span class="tag buy">Thesis ✓</span>';
+  tagsHtml += '<span class="tag sector">'+s.notes.length+' note'+(s.notes.length!==1?'s':'')+'</span>';
+  document.getElementById('detail-tags').innerHTML = tagsHtml;
+
+  // Thesis content
+  var thesisEl = document.getElementById('thesis-content');
+  var thesisDateEl = document.getElementById('thesis-updated');
+  if (s.thesis) {
+    thesisEl.innerHTML = '<div style="text-align:center;padding:24px;"><span class="spinner"></span> Loading thesis…</div>';
+    thesisDateEl.textContent = 'Updated: '+new Date(s.thesis.modifiedTime).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    try {
+      var doc = await fetch('https://docs.googleapis.com/v1/documents/'+s.thesis.id,{
+        headers:{'Authorization':'Bearer '+accessToken}
+      }).then(r=>r.json());
+      var text = extractDocText(doc);
+      thesisEl.innerHTML = renderThesisMarkdown(text);
+    } catch(e) {
+      thesisEl.innerHTML = '<div class="thesis-empty"><div class="thesis-empty-icon">⚠️</div><div>Error loading thesis: '+e.message+'</div></div>';
+    }
+  } else {
+    thesisEl.innerHTML = '<div class="thesis-empty"><div class="thesis-empty-icon">📐</div><div>No thesis yet. Click <strong>Update Thesis</strong> to paste your Claude output.</div></div>';
+    thesisDateEl.textContent = '';
+  }
+
+  // Notes timeline
+  var notesEl = document.getElementById('detail-notes');
+  if (!s.notes.length) {
+    notesEl.innerHTML = '<div class="empty-state" style="padding:24px;"><div class="empty-text">No quick notes yet</div></div>';
+  } else {
+    notesEl.innerHTML = s.notes.map(function(n) {
+      var d = new Date(n.createdTime);
+      var ds = isNaN(d)?'':d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+      var ts = isNaN(d)?'':d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      var dueInfo = n.byWhen ? dateLabel(n.byWhen) : null;
+      return '<div class="note-item">'+
+        '<div class="note-item-header">'+
+        '<span class="note-type-tag '+n.type+'">'+n.type+'</span>'+
+        (dueInfo?'<span class="date-badge '+dueInfo.cls+'">📅 '+dueInfo.label+'</span>':'')+
+        '<span class="note-time">'+ds+' '+ts+'</span>'+
+        '</div></div>';
+    }).join('');
+  }
+}
+
+function extractDocText(doc) {
+  var text = '';
+  if (doc.body && doc.body.content) {
+    doc.body.content.forEach(function(el) {
+      if (el.paragraph && el.paragraph.elements) {
+        el.paragraph.elements.forEach(function(e) {
+          if (e.textRun && e.textRun.content) text += e.textRun.content;
+        });
+      }
+      if (el.table) {
+        el.table.tableRows.forEach(function(row) {
+          row.tableCells.forEach(function(cell, ci) {
+            if (cell.content) {
+              cell.content.forEach(function(p) {
+                if (p.paragraph && p.paragraph.elements) {
+                  p.paragraph.elements.forEach(function(e) {
+                    if (e.textRun) text += e.textRun.content;
+                  });
+                }
+              });
+            }
+            if (ci < row.tableCells.length-1) text += '\t';
+          });
+          text += '\n';
+        });
+      }
+    });
+  }
+  return text;
+}
+
+function renderThesisMarkdown(text) {
+  // Simple markdown-ish rendering for thesis content
+  var lines = text.split('\n');
+  var html = '';
+  lines.forEach(function(line) {
+    var trimmed = line.trim();
+    if (!trimmed) { html += '<br>'; return; }
+    // Headers
+    if (/^#{1,3}\s/.test(trimmed)) {
+      var level = trimmed.match(/^(#{1,3})/)[1].length;
+      html += '<h'+level+'>'+esc(trimmed.replace(/^#{1,3}\s*/,''))+'</h'+level+'>';
+      return;
+    }
+    // Section dividers
+    if (/^[═─━─]{3,}/.test(trimmed) || /^---/.test(trimmed) || /^===/.test(trimmed)) {
+      html += '<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">';
+      return;
+    }
+    // Bold section headers (like "NOTE", "ACTION ITEMS")
+    if (/^[A-Z][A-Z\s/()]{2,}$/.test(trimmed) && trimmed.length < 40) {
+      html += '<h3>'+esc(trimmed)+'</h3>';
+      return;
+    }
+    // Blockquotes
+    if (trimmed.startsWith('>')) {
+      html += '<blockquote>'+esc(trimmed.slice(1).trim())+'</blockquote>';
+      return;
+    }
+    // Table rows (tab separated)
+    if (line.includes('\t')) {
+      html += '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text2);padding:2px 0;">' +
+        line.split('\t').map(c=>'<span style="display:inline-block;min-width:120px;">'+esc(c.trim())+'</span>').join('') + '</div>';
+      return;
+    }
+    // Bullet points
+    if (/^[-•*]\s/.test(trimmed)) {
+      html += '<div style="padding-left:16px;margin:2px 0;">• '+esc(trimmed.replace(/^[-•*]\s*/,''))+'</div>';
+      return;
+    }
+    // Regular line with inline bold
+    var processed = esc(trimmed).replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text);">$1</strong>');
+    html += '<div style="margin:2px 0;">'+processed+'</div>';
+  });
+  return html;
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showDashboard() {
+  currentTicker = null;
+  document.getElementById('detail-view').classList.remove('active');
+  document.getElementById('all-notes-view').style.display = 'none';
+  document.getElementById('dashboard-view').style.display = 'block';
+  var tabs = document.querySelectorAll('.nav-tab');
+  tabs.forEach(t=>t.classList.remove('active'));
+  tabs[0].classList.add('active');
+  renderDashboard();
+}
+
+// ═══ MODALS ═══
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function openQuickNote() {
+  resetQuickNoteForm();
+  openModal('quick-note-modal');
+  document.getElementById('qn-ticker').focus();
+}
+
+function openQuickNoteFor() {
+  resetQuickNoteForm();
+  if (currentTicker) document.getElementById('qn-ticker').value = currentTicker;
+  openModal('quick-note-modal');
+  document.getElementById('qn-body').focus();
+}
+
+function openPasteThesis() {
+  resetPasteThesisForm();
+  openModal('paste-thesis-modal');
+  document.getElementById('pt-ticker').focus();
+}
+
+function openPasteThesisFor() {
+  resetPasteThesisForm();
+  if (currentTicker) document.getElementById('pt-ticker').value = currentTicker;
+  openModal('paste-thesis-modal');
+  document.getElementById('paste-thesis-area').focus();
+}
+
+function resetQuickNoteForm() {
+  ['qn-ticker','qn-price','qn-body','qn-actions','qn-bywhen'].forEach(function(id){
+    var el=document.getElementById(id); if(el){el.value='';el.classList.remove('error');}
+  });
+  document.getElementById('qn-type').value='NEWS';
+  document.getElementById('qn-sentiment').value='BULLISH';
+  document.getElementById('qn-date-badge').innerHTML='';
+  ['qn-err-ticker','qn-err-body'].forEach(id=>{document.getElementById(id).style.display='none';});
+}
+
+function resetPasteThesisForm() {
+  document.getElementById('pt-ticker').value='';
+  document.getElementById('paste-thesis-area').value='';
+  document.getElementById('pt-ticker').classList.remove('error');
+  document.getElementById('paste-thesis-area').classList.remove('error');
+  ['pt-err-ticker','pt-err-body'].forEach(id=>{document.getElementById(id).style.display='none';});
+}
+
+// Live date badge
+document.addEventListener('DOMContentLoaded',function(){
+  var bw=document.getElementById('qn-bywhen');
+  if(bw) bw.addEventListener('change',function(){
+    var wrap=document.getElementById('qn-date-badge');
+    var info=dateLabel(this.value);
+    wrap.innerHTML = info ? '<span class="date-badge '+info.cls+'">📅 '+info.label+'</span>' : '';
+  });
+});
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(function(overlay){
+  overlay.addEventListener('click',function(e){
+    if(e.target===overlay) overlay.classList.remove('active');
+  });
+});
+
+// ═══ SAVE QUICK NOTE ═══
+async function saveQuickNote() {
+  if (!requireAuth()) return;
+  // Validate
+  var valid = true;
+  var ticker = document.getElementById('qn-ticker').value.toUpperCase().trim();
+  var body = document.getElementById('qn-body').value.trim();
+  if (!ticker) { document.getElementById('qn-ticker').classList.add('error'); document.getElementById('qn-err-ticker').style.display='block'; valid=false; }
+  if (!body) { document.getElementById('qn-body').classList.add('error'); document.getElementById('qn-err-body').style.display='block'; valid=false; }
+  if (!valid) return;
+
+  if (!folderId) { toast('Drive not ready','info'); return; }
+
+  var btn=document.getElementById('qn-save-btn'), txt=document.getElementById('qn-save-text');
+  btn.disabled=true; txt.innerHTML='<span class="spinner"></span> Saving…';
+
+  var price = document.getElementById('qn-price').value.trim();
+  var type = document.getElementById('qn-type').value;
+  var sentiment = document.getElementById('qn-sentiment').value;
+  var actions = document.getElementById('qn-actions').value.trim();
+  var byWhen = document.getElementById('qn-bywhen').value;
+
+  var ts = new Date().toISOString();
+  var noteDt = ts.replace(/[-:T]/g,'').slice(0,15);
+  var byWhenFn = byWhen ? byWhen.replace(/-/g,'') : '';
+  var docTitle = ticker+'_NOTE_'+noteDt+'_'+type+(byWhenFn?'_'+byWhenFn:'');
+
+  var dateStr = new Date(ts).toLocaleString('en-IN',{dateStyle:'full',timeStyle:'short'});
+  var content = [
+    '═══ '+ticker+' — '+type+' ═══',
+    '',
+    'DATE:      '+dateStr,
+    'PRICE:     '+(price||'—'),
+    'SENTIMENT: '+sentiment,
+    'TYPE:      '+type,
+    byWhen?'REVISIT BY: '+new Date(byWhen).toLocaleDateString('en-IN',{dateStyle:'long'}):'',
+    '',
+    '─── NOTE ───',
+    body,
+    actions ? '\n─── ACTION ITEMS ───\n'+actions : '',
+    '',
+    '═══ Saved via StockNotes · '+ts+' ═══'
+  ].filter(Boolean).join('\n');
+
+  try {
+    var created = await fetch('https://www.googleapis.com/drive/v3/files',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify({name:docTitle,mimeType:'application/vnd.google-apps.document',parents:[folderId]})
+    }).then(r=>{if(!r.ok)throw new Error('Create failed');return r.json();});
+
+    await fetch('https://docs.googleapis.com/v1/documents/'+created.id+':batchUpdate',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify({requests:[{insertText:{location:{index:1},text:content}}]})
+    }).then(r=>{if(!r.ok)throw new Error('Write failed');});
+
+    toast('✅ '+ticker+' note saved!','success');
+    closeModal('quick-note-modal');
+    resetQuickNoteForm();
+    await loadAll();
+    if (currentTicker === ticker) openStockDetail(ticker);
+  } catch(e) {
+    toast('Save error: '+e.message,'error');
+  } finally {
+    btn.disabled=false; txt.textContent='💾 Save Note';
+  }
+}
+
+// ═══ SAVE / REPLACE THESIS ═══
+async function saveThesis() {
+  if (!requireAuth()) return;
+  var valid = true;
+  var ticker = document.getElementById('pt-ticker').value.toUpperCase().trim();
+  var body = document.getElementById('paste-thesis-area').value.trim();
+  if (!ticker) { document.getElementById('pt-ticker').classList.add('error'); document.getElementById('pt-err-ticker').style.display='block'; valid=false; }
+  if (!body) { document.getElementById('paste-thesis-area').classList.add('error'); document.getElementById('pt-err-body').style.display='block'; valid=false; }
+  if (!valid) return;
+  if (!folderId) { toast('Drive not ready','info'); return; }
+
+  var btn=document.getElementById('pt-save-btn'), txt=document.getElementById('pt-save-text');
+  btn.disabled=true; txt.innerHTML='<span class="spinner"></span> Saving thesis…';
+
+  var docTitle = ticker+'_THESIS';
+
+  try {
+    // Check if thesis doc already exists for this ticker
+    var existingId = null;
+    if (stocksMap[ticker] && stocksMap[ticker].thesis) {
+      existingId = stocksMap[ticker].thesis.id;
+    }
+
+    if (existingId) {
+      // Clear existing doc content, then write new
+      // Get current doc to find content length
+      var curDoc = await fetch('https://docs.googleapis.com/v1/documents/'+existingId,{
+        headers:{'Authorization':'Bearer '+accessToken}
+      }).then(r=>r.json());
+
+      var endIndex = 1;
+      if (curDoc.body && curDoc.body.content) {
+        var last = curDoc.body.content[curDoc.body.content.length-1];
+        if (last) endIndex = last.endIndex - 1;
+      }
+
+      var requests = [];
+      if (endIndex > 1) {
+        requests.push({deleteContentRange:{range:{startIndex:1,endIndex:endIndex}}});
+      }
+      requests.push({insertText:{location:{index:1},text:body}});
+
+      await fetch('https://docs.googleapis.com/v1/documents/'+existingId+':batchUpdate',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+        body:JSON.stringify({requests:requests})
+      }).then(r=>{if(!r.ok)throw new Error('Update failed');});
+
+      toast('✅ '+ticker+' thesis updated!','success');
+    } else {
+      // Create new thesis doc
+      var created = await fetch('https://www.googleapis.com/drive/v3/files',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+        body:JSON.stringify({name:docTitle,mimeType:'application/vnd.google-apps.document',parents:[folderId]})
+      }).then(r=>{if(!r.ok)throw new Error('Create failed');return r.json();});
+
+      await fetch('https://docs.googleapis.com/v1/documents/'+created.id+':batchUpdate',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+        body:JSON.stringify({requests:[{insertText:{location:{index:1},text:body}}]})
+      }).then(r=>{if(!r.ok)throw new Error('Write failed');});
+
+      toast('✅ '+ticker+' thesis created!','success');
+    }
+
+    closeModal('paste-thesis-modal');
+    resetPasteThesisForm();
+    await loadAll();
+    openStockDetail(ticker);
+  } catch(e) {
+    toast('Save error: '+e.message,'error');
+  } finally {
+    btn.disabled=false; txt.textContent='📐 Save Thesis to Drive';
+  }
+}
+
+// ═══ TOAST ═══
 var toastTimer;
-function showToast(msg,type){
+function toast(msg,type) {
   type=type||'info';
   var t=document.getElementById('toast');
   t.textContent=msg; t.className='show '+type;
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){t.className='';},3500);
+  toastTimer=setTimeout(()=>{t.className='';},3500);
 }
 </script>
 </body>
